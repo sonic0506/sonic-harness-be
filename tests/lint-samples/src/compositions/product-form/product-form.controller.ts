@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 
-import { ProductFormOptionsDto } from './dto/product-form-options.dto';
-import { ProductFormService } from './product-form.service';
+import { ProductFormOptionsDto } from './dto/product-form-options.dto.js';
+import { ProductFormService } from './product-form.service.js';
 
 @Controller('product-form')
 export class ProductFormController {

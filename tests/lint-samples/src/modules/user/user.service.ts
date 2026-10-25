@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Transactional } from '@nestjs-cls/transactional';
 
-import { PageDto } from '@/common/pagination/page.dto';
-import type { PageQueryDto } from '@/common/pagination/page-query.dto';
+import { PageDto } from '@/common/pagination/page.dto.js';
+import type { PageQueryDto } from '@/common/pagination/page-query.dto.js';
 
-import type { CreateUserDto } from './dto/create-user.dto';
-import { UserResponseDto } from './dto/user-response.dto';
-import { UserNotFoundException } from './user.exception';
-import { UserRepository } from './user.repository';
+import type { CreateUserDto } from './dto/create-user.dto.js';
+import { UserResponseDto } from './dto/user-response.dto.js';
+import { UserNotFoundException } from './user.exception.js';
+import { UserRepository } from './user.repository.js';
 
 @Injectable()
 export class UserService {

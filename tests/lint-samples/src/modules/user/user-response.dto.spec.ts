@@ -1,5 +1,5 @@
-import { UserResponseDto } from './dto/user-response.dto';
-import { User } from './entities/user.entity';
+import { UserResponseDto } from './dto/user-response.dto.js';
+import { User } from './entities/user.entity.js';
 
 describe('UserResponseDto', () => {
   it('엔티티에서 공개 필드만 옮겨요', () => {

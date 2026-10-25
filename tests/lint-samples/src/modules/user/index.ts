@@ -1,4 +1,4 @@
-export { UserResponseDto } from './dto/user-response.dto';
-export { User } from './entities/user.entity';
-export { UserModule } from './user.module';
-export { UserService } from './user.service';
+export { UserResponseDto } from './dto/user-response.dto.js';
+export { User } from './entities/user.entity.js';
+export { UserModule } from './user.module.js';
+export { UserService } from './user.service.js';

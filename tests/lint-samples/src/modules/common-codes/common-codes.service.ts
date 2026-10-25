@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { CommonCodesRepository } from './common-codes.repository';
+import { CommonCodesRepository } from './common-codes.repository.js';
 
 @Injectable()
 export class CommonCodesService {

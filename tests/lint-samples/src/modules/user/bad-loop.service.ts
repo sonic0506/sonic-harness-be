@@ -1,8 +1,8 @@
 // expect: sonic-be/no-repository-call-in-loop, no-await-in-loop
 import { Injectable } from '@nestjs/common';
 
-import type { User } from './entities/user.entity';
-import { UserRepository } from './user.repository';
+import type { User } from './entities/user.entity.js';
+import { UserRepository } from './user.repository.js';
 
 @Injectable()
 export class BadLoopService {

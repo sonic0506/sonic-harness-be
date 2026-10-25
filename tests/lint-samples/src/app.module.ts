@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 
-import { ProductFormModule } from './compositions/product-form/product-form.module';
-import { CommonCodesModule } from './modules/common-codes';
-import { OrderModule } from './modules/order';
-import { UserModule } from './modules/user';
+import { ProductFormModule } from './compositions/product-form/product-form.module.js';
+import { CommonCodesModule } from './modules/common-codes/index.js';
+import { OrderModule } from './modules/order/index.js';
+import { UserModule } from './modules/user/index.js';
 
 @Module({
   imports: [UserModule, OrderModule, CommonCodesModule, ProductFormModule],

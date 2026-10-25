@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { CommonCode } from './entities/common-code.entity';
+import { CommonCode } from './entities/common-code.entity.js';
 
 @Injectable()
 export class CommonCodesRepository {

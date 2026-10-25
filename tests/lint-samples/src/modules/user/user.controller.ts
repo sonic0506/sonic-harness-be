@@ -12,12 +12,12 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 
-import { PageDto } from '@/common/pagination/page.dto';
-import { PageQueryDto } from '@/common/pagination/page-query.dto';
+import { PageDto } from '@/common/pagination/page.dto.js';
+import { PageQueryDto } from '@/common/pagination/page-query.dto.js';
 
-import { CreateUserDto } from './dto/create-user.dto';
-import { UserResponseDto } from './dto/user-response.dto';
-import { UserService } from './user.service';
+import { CreateUserDto } from './dto/create-user.dto.js';
+import { UserResponseDto } from './dto/user-response.dto.js';
+import { UserService } from './user.service.js';
 
 @Controller('users')
 export class UserController {

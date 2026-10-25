@@ -1,13 +1,13 @@
 // expect: sonic-be/composition-max-deps
 import { Injectable } from '@nestjs/common';
 
-import { CommonCodesService } from '@/modules/common-codes';
-import { COUPON_FEATURE } from '@/modules/coupon';
-import { OrderService } from '@/modules/order';
-import { PAYMENT_FEATURE } from '@/modules/payment';
-import { ProductResponseDto } from '@/modules/product';
-import { SHIPPING_FEATURE } from '@/modules/shipping';
-import { UserService } from '@/modules/user';
+import { CommonCodesService } from '@/modules/common-codes/index.js';
+import { COUPON_FEATURE } from '@/modules/coupon/index.js';
+import { OrderService } from '@/modules/order/index.js';
+import { PAYMENT_FEATURE } from '@/modules/payment/index.js';
+import { ProductResponseDto } from '@/modules/product/index.js';
+import { SHIPPING_FEATURE } from '@/modules/shipping/index.js';
+import { UserService } from '@/modules/user/index.js';
 
 @Injectable()
 export class BadManyService {

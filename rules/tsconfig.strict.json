@@ -1,10 +1,11 @@
 {
   // 프로젝트 tsconfig.json에서 "extends"로 불러요. ${configDir}는 불러온 쪽 tsconfig 위치예요.
-  // FE 하네스와 달리 두 옵션을 꺼요.
-  // - verbatimModuleSyntax: Nest 기본 출력(CommonJS)에서 import 문법이 에러가 나요.
-  // - exactOptionalPropertyTypes: DTO의 선택 필드(string | undefined)를 TypeORM find 옵션에 넘길 때마다 막혀요.
+  // Nest 12 기본(ESM, nodenext)을 그대로 두고 strict 계열만 더해요. FE 하네스와 다른 점:
+  // - exactOptionalPropertyTypes는 꺼요. DTO의 선택 필드(string | undefined)를 TypeORM find 옵션에 넘길 때마다 막혀요.
+  // - strictPropertyInitialization은 꺼요(Nest 기본과 같아요). DTO·entity 필드는 프레임워크가 채워요.
   "compilerOptions": {
     "strict": true,
+    "strictPropertyInitialization": false,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,

@@ -1,6 +1,6 @@
-import { UserResponseDto } from '@/modules/user';
+import { UserResponseDto } from '@/modules/user/index.js';
 
-import type { Order } from '../entities/order.entity';
+import type { Order } from '../entities/order.entity.js';
 
 export class OrderResponseDto {
   id!: number;

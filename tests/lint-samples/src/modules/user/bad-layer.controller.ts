@@ -1,7 +1,7 @@
 // expect: boundaries/dependencies
 import { Controller, Get } from '@nestjs/common';
 
-import { UserRepository } from './user.repository';
+import { UserRepository } from './user.repository.js';
 
 @Controller('bad-layer')
 export class BadLayerController {

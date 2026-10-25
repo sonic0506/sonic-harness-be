@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
-import { CommonCodesService } from '@/modules/common-codes';
+import { CommonCodesService } from '@/modules/common-codes/index.js';
 
-import { ProductFormOptionsDto } from './dto/product-form-options.dto';
+import { ProductFormOptionsDto } from './dto/product-form-options.dto.js';
 
 @Injectable()
 export class ProductFormService {

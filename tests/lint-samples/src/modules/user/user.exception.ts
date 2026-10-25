@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { AppException } from '@/common/exceptions/app.exception';
+import { AppException } from '@/common/exceptions/app.exception.js';
 
 export class UserNotFoundException extends AppException {
   constructor(id: number) {

@@ -168,7 +168,8 @@ const isDtoType = (node) => {
   const { name } = node.typeName;
   const args = node.typeArguments?.params ?? [];
   if (name === 'Promise' || name === 'Array') return args.every(isDtoType);
-  if (name === 'StreamableFile') return true;
+  // 프레임워크가 형식을 정한 응답(파일, health check)은 그대로 둬요.
+  if (['StreamableFile', 'HealthCheckResult'].includes(name)) return true;
   return /Dto$/.test(name) && args.every(isDtoType);
 };
 const handlerReturnDto = rule(
@@ -456,12 +457,12 @@ const noRepositoryCallInLoop = rule(
   }),
 );
 
-// 테스트에서 프로젝트 모듈을 jest.mock으로 바꾸지 않아요. service 단위 테스트는 repository만
+// 테스트에서 프로젝트 모듈을 vi.mock으로 바꾸지 않아요. service 단위 테스트는 repository만
 // Test.createTestingModule().overrideProvider로 바꾸고, 외부 HTTP는 MSW로 바꿔요.
 const noInternalMock = rule(
   {
     internal:
-      "프로젝트 모듈('{{path}}')을 jest.mock으로 바꾸지 않아요. repository는 overrideProvider로, 외부 HTTP는 MSW로 바꿔요.",
+      "프로젝트 모듈('{{path}}')을 vi.mock으로 바꾸지 않아요. repository는 overrideProvider로, 외부 HTTP는 MSW로 바꿔요.",
   },
   (context) => ({
     CallExpression(node) {
@@ -470,7 +471,7 @@ const noInternalMock = rule(
       if (
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
-        callee.object.name === 'jest' &&
+        callee.object.name === 'vi' &&
         ['mock', 'doMock'].includes(memberName(callee)) &&
         first?.type === 'Literal' &&
         /^(@\/|\.)/.test(String(first.value))

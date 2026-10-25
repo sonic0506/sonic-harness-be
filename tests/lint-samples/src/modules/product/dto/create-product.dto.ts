@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-import { IsCommonCode, NotCommonCode } from '@/modules/common-codes';
+import { IsCommonCode, NotCommonCode } from '@/modules/common-codes/index.js';
 
 export class CreateProductDto {
   @IsString()

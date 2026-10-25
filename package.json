@@ -6,8 +6,9 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint .",
-    "format": "prettier --write .",
-    "test:lint": "node tests/lint-samples/run.mjs"
+    "format": "prettier --write . && npm run format:templates",
+    "test:lint": "node tests/lint-samples/run.mjs",
+    "format:templates": "prettier --ignore-path /dev/null --config rules/prettier.base.mjs --write \"templates*/**/*.{ts,mts,mjs,md,yml,json}\""
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
@@ -16,30 +17,29 @@
     "@eslint/js": "^10.0.1",
     "@nestjs-cls/transactional": "^4.0.1",
     "@nestjs-cls/transactional-adapter-typeorm": "^2.0.1",
-    "@nestjs/common": "^11.2.8",
-    "@nestjs/core": "^11.2.8",
-    "@nestjs/platform-express": "^11.2.8",
-    "@nestjs/swagger": "^11.4.7",
-    "@nestjs/testing": "^11.2.8",
-    "@nestjs/typeorm": "^11.0.3",
-    "@types/jest": "^30.0.0",
+    "@nestjs/common": "^12.2.0",
+    "@nestjs/core": "^12.2.0",
+    "@nestjs/platform-express": "^12.2.0",
+    "@nestjs/swagger": "^12.0.4",
+    "@nestjs/testing": "^12.2.0",
+    "@nestjs/typeorm": "^12.0.2",
     "@types/node": "^24.19.2",
+    "@vitest/eslint-plugin": "^1.6.28",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "eslint": "^10.13.0",
     "eslint-import-resolver-typescript": "^4.4.5",
     "eslint-plugin-boundaries": "^7.3.0",
     "eslint-plugin-check-file": "^3.3.2",
-    "eslint-plugin-jest": "^29.17.0",
     "eslint-plugin-simple-import-sort": "^14.0.0",
     "globals": "^17.13.0",
-    "jest": "^30.5.2",
     "nestjs-cls": "^7.0.1",
     "prettier": "^3.9.10",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typeorm": "^1.1.2",
     "typescript": "~6.0",
-    "typescript-eslint": "^8.72.0"
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^5.0.5"
   }
 }

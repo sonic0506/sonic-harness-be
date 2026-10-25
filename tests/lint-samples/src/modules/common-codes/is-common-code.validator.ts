@@ -7,8 +7,8 @@ import {
   type ValidatorConstraintInterface,
 } from 'class-validator';
 
-import type { CommonCodeGroup } from './common-code-groups.constants';
-import { CommonCodesService } from './common-codes.service';
+import type { CommonCodeGroup } from './common-code-groups.constants.js';
+import { CommonCodesService } from './common-codes.service.js';
 
 @ValidatorConstraint({ name: 'isCommonCode', async: true })
 @Injectable()

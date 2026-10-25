@@ -1,7 +1,7 @@
 // expect: sonic-be/no-eager-lazy-relation
 import { Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
-import { User } from '@/modules/user';
+import { User } from '@/modules/user/index.js';
 
 @Entity('bad_eager')
 export class BadEager {

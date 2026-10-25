@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { CommonCodesRepository } from './common-codes.repository';
-import { CommonCodesService } from './common-codes.service';
-import { CommonCode } from './entities/common-code.entity';
-import { IsCommonCodeConstraint } from './is-common-code.validator';
+import { CommonCodesRepository } from './common-codes.repository.js';
+import { CommonCodesService } from './common-codes.service.js';
+import { CommonCode } from './entities/common-code.entity.js';
+import { IsCommonCodeConstraint } from './is-common-code.validator.js';
 
 @Module({
   imports: [TypeOrmModule.forFeature([CommonCode])],

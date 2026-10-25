@@ -1,7 +1,7 @@
 // expect: sonic-be/handler-return-dto
 import { Controller, Get } from '@nestjs/common';
 
-import { UserService } from './user.service';
+import { UserService } from './user.service.js';
 
 @Controller('bad-return')
 export class BadReturnController {

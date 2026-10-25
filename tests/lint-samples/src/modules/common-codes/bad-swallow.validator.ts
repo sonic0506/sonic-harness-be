@@ -5,7 +5,7 @@ import {
   type ValidatorConstraintInterface,
 } from 'class-validator';
 
-import { CommonCodesService } from './common-codes.service';
+import { CommonCodesService } from './common-codes.service.js';
 
 @ValidatorConstraint({ name: 'badSwallow', async: true })
 @Injectable()

@@ -1,7 +1,7 @@
 // expect: boundaries/dependencies
 import { Controller, Get } from '@nestjs/common';
 
-import { UserResponseDto, UserService } from '@/modules/user';
+import { UserResponseDto, UserService } from '@/modules/user/index.js';
 
 @Controller('bad-cross')
 export class BadCrossController {

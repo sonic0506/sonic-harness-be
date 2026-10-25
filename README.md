@@ -19,5 +19,9 @@ _NestJS + TypeScript 코딩 규칙을 글이 아니라 도구로 지키게 하�
 ```text
 .claude-plugin/marketplace.json  플러그인 목록 (source: ./plugin)
 plugin/                          명령어, hooks, scripts/harness.mjs
-rules/                           프로젝트 .sonic-harness-be/로 들어가는 파일
+rules/                           프로젝트 .sonic-harness-be/로 들어가는 파일 (harness.md, eslint, tsconfig …)
+templates/                       init 때 없는 파일만 복사하는 시작 파일
+templates.feature/               /sonic-harness-be:feature 뼈대 (sample-item을 새 이름으로 바꿔요)
+templates.common-codes/          init에서 공통 코드를 Y로 고르면 더하는 파일
+tests/lint-samples/              ESLint 규칙 테스트 (npm run test:lint)
 ```

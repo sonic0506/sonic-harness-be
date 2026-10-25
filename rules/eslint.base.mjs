@@ -2,9 +2,9 @@
 // 설명과 예시는 harness.md에 있어요. 이 프로젝트만의 규칙은 프로젝트 eslint.config.mjs에 둬요.
 import eslintComments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import js from '@eslint/js';
+import vitest from '@vitest/eslint-plugin';
 import boundaries from 'eslint-plugin-boundaries';
 import checkFile from 'eslint-plugin-check-file';
-import jest from 'eslint-plugin-jest';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -95,6 +95,7 @@ const ALLOWED = {
     same('repository'),
     same('entity'),
     same('validator'),
+    same('model'),
     ANY_INDEX,
     COMMON,
     CONFIG,
@@ -178,7 +179,8 @@ const restricted = (...allowed) =>
     .map(([, path]) => path);
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage'] },
+  // migration은 TypeORM이 만든 코드라 검사하지 않아요(파일 이름도 타임스탬프로 시작해요).
+  { ignores: ['dist', 'coverage', 'src/infra/database/migrations/**'] },
   js.configs.recommended,
   tseslint.configs.recommended,
   eslintComments.recommended,
@@ -396,13 +398,16 @@ export default tseslint.config(
   // 테스트(harness.md 7절)
   {
     files: SPEC,
-    ...jest.configs['flat/recommended'],
-  },
-  {
-    files: SPEC,
-    plugins: { 'sonic-be': sonicBe },
+    plugins: { vitest, 'sonic-be': sonicBe },
+    languageOptions: { globals: vitest.environments.env.globals },
     rules: {
-      'jest/valid-title': [
+      ...vitest.configs.recommended.rules,
+      // supertest의 .expect(201)도 검증으로 봐요.
+      'vitest/expect-expect': [
+        'error',
+        { assertFunctionNames: ['expect', 'request.**.expect'] },
+      ],
+      'vitest/valid-title': [
         'error',
         {
           mustMatch: {

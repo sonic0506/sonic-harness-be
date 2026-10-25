@@ -1,2 +1,2 @@
-export { CreateProductDto } from './dto/create-product.dto';
-export { ProductResponseDto } from './dto/product-response.dto';
+export { CreateProductDto } from './dto/create-product.dto.js';
+export { ProductResponseDto } from './dto/product-response.dto.js';

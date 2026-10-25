@@ -1,7 +1,7 @@
 // expect: sonic-be/dto-param-type
 import { Body, Controller, Post } from '@nestjs/common';
 
-import { UserResponseDto } from './dto/user-response.dto';
+import { UserResponseDto } from './dto/user-response.dto.js';
 
 @Controller('bad-body')
 export class BadBodyController {

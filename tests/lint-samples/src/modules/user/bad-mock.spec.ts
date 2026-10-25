@@ -1,5 +1,5 @@
 // expect: sonic-be/no-internal-mock
-jest.mock('./user.repository');
+vi.mock('./user.repository.js');
 
 describe('UserService', () => {
   it('사용자를 찾아요', () => {

@@ -1,8 +1,8 @@
 // expect: sonic-be/transactional-writes
 import { Injectable } from '@nestjs/common';
 
-import type { CreateUserDto } from './dto/create-user.dto';
-import { UserRepository } from './user.repository';
+import type { CreateUserDto } from './dto/create-user.dto.js';
+import { UserRepository } from './user.repository.js';
 
 @Injectable()
 export class BadTxService {

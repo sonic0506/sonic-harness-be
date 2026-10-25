@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
-import { UserService } from '@/modules/user';
+import { UserService } from '@/modules/user/index.js';
 
-import { OrderResponseDto } from './dto/order-response.dto';
-import { OrderRepository } from './order.repository';
+import { OrderResponseDto } from './dto/order-response.dto.js';
+import { OrderRepository } from './order.repository.js';
 
 const RECENT_SIZE = 10;
 

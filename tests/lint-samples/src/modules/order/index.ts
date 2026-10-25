@@ -1,2 +1,2 @@
-export { OrderModule } from './order.module';
-export { OrderService } from './order.service';
+export { OrderModule } from './order.module.js';
+export { OrderService } from './order.service.js';
