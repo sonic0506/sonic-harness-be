@@ -1,0 +1,11 @@
+{
+  "name": "sonic-harness-be",
+  "version": "0.1.0",
+  "description": "NestJS + TypeScript 코딩 하네스(Feature-Based + Layered, lint hook, 규칙 문서)를 프로젝트에 적용하고 원본과 동기화해요.",
+  "author": {
+    "name": "sonic0506",
+    "url": "https://github.com/sonic0506"
+  },
+  "repository": "https://github.com/sonic0506/sonic-harness-be",
+  "license": "MIT"
+}
