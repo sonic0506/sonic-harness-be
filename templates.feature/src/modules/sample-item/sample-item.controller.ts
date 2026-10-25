@@ -14,10 +14,10 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 
 import { ApiErrors } from '@/common/exceptions/api-errors.js';
-import { PageDto } from '@/common/pagination/page.dto.js';
 import { PageQueryDto } from '@/common/pagination/page-query.dto.js';
 
 import { CreateSampleItemDto } from './dto/create-sample-item.dto.js';
+import { SampleItemPageDto } from './dto/sample-item-page.dto.js';
 import { SampleItemResponseDto } from './dto/sample-item-response.dto.js';
 import { UpdateSampleItemDto } from './dto/update-sample-item.dto.js';
 import { SampleItemNotFoundException } from './sample-item.exception.js';
@@ -32,9 +32,7 @@ export class SampleItemController {
 
   /** 목록을 페이지 단위로 조회해요. */
   @Get()
-  findPage(
-    @Query() query: PageQueryDto,
-  ): Promise<PageDto<SampleItemResponseDto>> {
+  findPage(@Query() query: PageQueryDto): Promise<SampleItemPageDto> {
     return this.sampleItemService.findPage(query);
   }
 

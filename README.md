@@ -14,16 +14,25 @@ _NestJS + TypeScript 코딩 규칙을 글이 아니라 도구로 지키게 하�
 /plugin install sonic-harness-be@sonic-harness-be
 ```
 
+터미널에서는 CLI로도 설치해요(다른 Claude Code 세션이 열려 있을 때 등).
+
+```bash
+claude plugin marketplace add sonic0506/sonic-harness-be
+claude plugin install sonic-harness-be@sonic-harness-be
+```
+
+명령(`/sonic-harness-be:*`)과 hook은 설치한 뒤 **새로 연 세션부터** 적용돼요. 이미 열린 세션에서는 보이지 않아요.
+
 ## 명령어
 
-| 명령어                                  | 하는 일                                                                 |
-| --------------------------------------- | ----------------------------------------------------------------------- |
-| `/sonic-harness-be:init [common-codes]` | 이 프로젝트에 최신 하네스를 적용해요. 공통 코드 기능을 쓸지 함께 물어요 |
-| `/sonic-harness-be:feature <이름>`      | module·controller·service·repository·DTO·entity·테스트 뼈대를 만들어요  |
-| `/sonic-harness-be:status`              | 적용 버전, 원본의 새 변경, 프로젝트에서 고친 하네스 파일을 보여 줘요    |
-| `/sonic-harness-be:update`              | 최신 규칙을 받아요. 프로젝트에서 고친 파일은 덮어쓰지 않고 합쳐요       |
-| `/sonic-harness-be:check`               | 마지막 점검 뒤 받은 규칙 변경을 코드가 지키는지 점검해요                |
-| `/sonic-harness-be:contribute`          | 프로젝트에서 고친 공통 규칙을 이 저장소에 PR로 올려요                   |
+| 명령어                                  | 하는 일                                                                                                      |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `/sonic-harness-be:init [common-codes]` | 이 프로젝트에 최신 하네스를 적용해요. 공통 코드 기능을 쓸지 함께 물어요                                      |
+| `/sonic-harness-be:feature <이름>`      | module·controller·service·repository·DTO·entity·테스트 뼈대를 만들어요. `--no-entity`면 controller·service만 |
+| `/sonic-harness-be:status`              | 적용 버전, 원본의 새 변경, 프로젝트에서 고친 하네스 파일을 보여 줘요                                         |
+| `/sonic-harness-be:update`              | 최신 규칙을 받아요. 프로젝트에서 고친 파일은 덮어쓰지 않고 합쳐요                                            |
+| `/sonic-harness-be:check`               | 마지막 점검 뒤 받은 규칙 변경을 코드가 지키는지 점검해요                                                     |
+| `/sonic-harness-be:contribute`          | 프로젝트에서 고친 공통 규칙을 이 저장소에 PR로 올려요                                                        |
 
 hook은 파일을 쓰기 전에 경로(kebab-case)를 검사하고, 쓴 뒤 Prettier와 `eslint --fix`를 실행해요. Claude가 작업을 끝내려 할 때는 typecheck와 바뀐 파일의 단위 테스트를 돌리고, 실패하면 끝내지 못하게 해요.
 

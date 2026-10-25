@@ -147,6 +147,11 @@ const POLICIES = [
       allow: { to: { element: to } },
     })),
   ),
+  // composition controller는 다른 feature의 응답 DTO를 타입으로만 써요(import type). service 호출은 composition service로 해요.
+  {
+    from: { element: { type: 'composition-controller' } },
+    allow: { to: { element: ANY_INDEX }, dependency: { kind: 'type' } },
+  },
 ];
 
 // ── import 제한 ──────────────────────────────────────────────────────────
@@ -414,7 +419,15 @@ export default tseslint.config(
       // supertest의 .expect(201)도 검증으로 봐요.
       'vitest/expect-expect': [
         'error',
-        { assertFunctionNames: ['expect', 'request.**.expect'] },
+        // supertest .expect(...)는 request(...)로 바로 부르든 도우미(create(...).expect)로 부르든 단언이에요.
+        {
+          assertFunctionNames: [
+            'expect',
+            'request.**.expect',
+            '*.expect',
+            '*.**.expect',
+          ],
+        },
       ],
       'vitest/valid-title': [
         'error',
