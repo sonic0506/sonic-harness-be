@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # /sonic-harness-be:init 명령 확인: 새 nest new 프로젝트에서 Claude가 init을 끝까지 하고,
-# lint·typecheck·test·build와 CI 검사가 통과하는지 봐요. 원본은 이 저장소의 커밋된 상태예요.
+# lint·typecheck·test·build와 CI 검사가 통과하는지 봐요. 원본은 이 저장소에서 지금 체크아웃한 브랜치의 커밋된 상태예요
+# (실행마다 새로 clone해요. 예전 clone을 다시 쓰면 그때의 기본 브랜치를 평가해요).
 #   evals/init-check.sh [y|n]   (기본 n. y는 공통 코드 질문에 Y로 답해요)
 set -uo pipefail
 codes=${1:-n}
@@ -8,7 +9,7 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 app="$here/sandbox/init-$codes-$(date +%H%M%S)"
 log="$here/evals/results/init-check-$codes-$(date +%Y%m%d-%H%M%S).jsonl"
 mkdir -p "$here/evals/results" "$here/sandbox"
-export SONIC_HARNESS_BE_ORIGIN="$here" SONIC_HARNESS_BE_HOME="$here/sandbox/.harness-home-init-$codes"
+export SONIC_HARNESS_BE_ORIGIN="$here" SONIC_HARNESS_BE_HOME="$app.harness-home"
 
 cd "$here/sandbox"
 npx --yes @nestjs/cli@12 new "$(basename "$app")" --skip-git --package-manager npm --strict </dev/null >/dev/null 2>&1
@@ -48,6 +49,7 @@ check "npm test" "npm test"
 check "npm run lint:cycles" "npm run lint:cycles"
 check "harness-checks env e2e" "node scripts/harness-checks.mjs env e2e"
 check "openapi.json이 코드와 같음" "npm run openapi:check"
+check "prettier --check (CI lint job)" "npx prettier --check ."
 check "nest build" "npx nest build"
 echo "로그: $log"
 [ $ok = 0 ] && echo "결과: PASS" || echo "결과: FAIL"
