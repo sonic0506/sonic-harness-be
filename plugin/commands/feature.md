@@ -1,6 +1,6 @@
 ---
 description: 새 feature 뼈대 만들기 (module·controller·service·repository·DTO·entity·테스트)
-argument-hint: '<kebab-case 이름> [--plural <복수형>]'
+argument-hint: '<kebab-case 이름> [--plural <복수형>] [--no-entity]'
 allowed-tools: Bash(node:*), Bash(npm:*), Bash(npx:*), Read, Edit, Write
 ---
 
@@ -15,6 +15,7 @@ allowed-tools: Bash(node:*), Bash(npm:*), Bash(npx:*), Read, Edit, Write
    - 비슷한 feature가 이미 있는지 `src/modules/`를 봐요. 있으면 그 feature를 넓힐지 물어요.
    - 단순 분류·유형 값이면 feature 대신 공통 코드 그룹이 맞는지 물어요.
 3. `harness.mjs feature <이름>`을 실행해요. 복수형이 불규칙하면(`person` → `people`) `--plural <복수형>`을 붙여요. 경로는 `/v1/<복수형>`, 테이블은 `<복수형_스네이크>`가 돼요.
+   - DB 테이블이 없는 feature(로그인처럼 다른 feature service를 조합하는 기능)면 `--no-entity`를 붙여요. controller·service·DTO·테스트만 만들고 entity·repository·migration은 없어요. 다른 feature는 그 `index.ts`의 Module을 imports에, service를 생성자에 더해요.
 4. 사용자가 말한 요구에 맞게 뼈대를 채워요(작업 순서는 harness.md 10절).
    - entity 필드 → `npm run migration:generate -- src/infra/database/migrations/add-<복수형>` (DB가 필요해요. 없으면 사용자에게 `.env`의 `DATABASE_URL`을 확인해 달라고 해요)
    - 요청·응답 DTO(JSDoc 설명 포함) → repository → service와 단위 테스트 → controller → e2e

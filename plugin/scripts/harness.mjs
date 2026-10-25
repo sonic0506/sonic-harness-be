@@ -238,6 +238,7 @@ const newCommits = (from, to) =>
     'rules',
     'templates',
     'templates.feature',
+    'templates.feature-service',
     'templates.common-codes',
   );
 // 공통 templates/ 위에 공통 코드를 켜면 templates.common-codes/를 겹쳐요. 같은 경로면 겹친 파일이 이겨요.
@@ -286,6 +287,25 @@ function needNest() {
     fail('NestJS 프로젝트가 아니에요(package.json에 @nestjs/core가 없어요).');
 }
 
+// 프로젝트 파일에 없는 줄만 끝에 덧붙여요(.gitignore처럼 줄 단위로 합칠 수 있는 파일). 반환: 덧붙였는지
+function appendMissingLines(path, template) {
+  const text = read(path) ?? '';
+  // '/dist'와 'dist/'는 'dist'와 같은 줄로 봐요.
+  const key = (l) => l.trim().replace(/^\//, '').replace(/\/$/, '');
+  const have = new Set(text.split('\n').map(key));
+  const missing = template
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('#') && !have.has(key(l)));
+  if (!missing.length) return false;
+  const sep = text.endsWith('\n') || !text ? '' : '\n';
+  writeFileSync(
+    path,
+    `${text}${sep}\n# sonic-harness-be\n${missing.join('\n')}\n`,
+  );
+  return true;
+}
+
 // app.module.ts의 표시 줄 앞에 모듈을 더하고 import 순서는 eslint --fix가 맞춰요.
 function registerModule(moduleName, importPath) {
   const path = join(PROJECT, 'src/app.module.ts');
@@ -327,8 +347,13 @@ const commands = {
     const copied = [];
     const skipped = [];
     const replaced = [];
+    const merged = [];
     for (const [f, src] of templatesAt(ref, false)) {
       const dest = join(PROJECT, f);
+      if (f === '.gitignore' && existsSync(dest)) {
+        if (appendMissingLines(dest, showAt(ref, src))) merged.push(f);
+        continue;
+      }
       if (existsSync(dest) && !(isStarter && STARTER_REPLACE.includes(f))) {
         skipped.push(f);
         continue;
@@ -354,6 +379,8 @@ const commands = {
       ...ts,
       extends: `./${DIR_NAME}/tsconfig.strict.json`,
     });
+    // CI lint job이 prettier --check를 해요. 고친 tsconfig를 프로젝트 형식으로 맞춰요.
+    run('npx', ['prettier', '--write', 'tsconfig.json'], { stdio: 'ignore' });
     writeLock({
       origin: ORIGIN,
       ref,
@@ -374,6 +401,8 @@ const commands = {
         `  nest new 예시 파일을 지웠어요: ${removed.join(', ') || '없음'}`,
       );
     }
+    if (merged.length)
+      console.log(`  없는 줄만 덧붙인 템플릿: ${merged.join(', ')}`);
     console.log(`  이미 있어서 건너뛴 템플릿: ${skipped.join(', ') || '없음'}`);
   },
 
@@ -401,6 +430,14 @@ const commands = {
     );
     nestCli.compilerOptions.plugins = [...plugins, SWAGGER_PLUGIN];
     writeJson(nestCliPath, nestCli);
+    // 고친 JSON을 프로젝트 Prettier 형식으로 맞춰요(CI lint job의 prettier --check).
+    run(
+      'npx',
+      ['prettier', '--write', 'package.json', 'nest-cli.json', 'tsconfig.json'],
+      {
+        stdio: 'ignore',
+      },
+    );
     if (existsSync(join(PROJECT, '.git')))
       run('npx', ['husky'], { stdio: 'ignore' });
     else
@@ -471,16 +508,22 @@ const commands = {
 
   // sample-item 뼈대를 새 이름으로 바꿔 만들어요.
   // ponytail: 복수형은 단순 규칙(y→ies, s/x/ch/sh→es, 나머지 s)이에요. 불규칙(person)은 --plural로 줘요.
-  feature(name, flag, pluralArg) {
+  feature(name, ...options) {
     const lock = needLock();
     const KEBAB = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
     if (!KEBAB.test(name ?? ''))
       fail(
-        '사용법: feature <kebab-case 단수 이름> [--plural <복수형>]  예: feature order-item',
+        '사용법: feature <kebab-case 단수 이름> [--plural <복수형>] [--no-entity]  예: feature order-item',
       );
+    const pluralAt = options.indexOf('--plural');
+    // --no-entity: DB 테이블 없이 controller·service만(다른 feature를 조합하는 로그인 같은 기능)
+    const isNoEntity = options.includes('--no-entity');
+    const source = isNoEntity
+      ? 'templates.feature-service'
+      : 'templates.feature';
     const plural =
-      flag === '--plural' && pluralArg
-        ? pluralArg
+      pluralAt >= 0 && options[pluralAt + 1]
+        ? options[pluralAt + 1]
         : `${name.replace(/([^aeiou])y$/, '$1ie').replace(/(s|x|ch|sh)$/, '$1e')}s`;
     if (!KEBAB.test(plural)) fail(`복수형이 kebab-case가 아니에요: ${plural}`);
     const dir = `src/modules/${name}`;
@@ -502,33 +545,27 @@ const commands = {
     ];
     const rename = (text) =>
       replacements.reduce((t, [from, to]) => t.replaceAll(from, to), text);
-    const files = listAt(lock.ref, 'templates.feature').map((p) => [
-      p,
-      rename(p),
-    ]);
+    const files = listAt(lock.ref, source).map((p) => [p, rename(p)]);
+    if (!files.length)
+      fail(
+        `이 프로젝트의 하네스 버전에 ${source}가 없어요. /sonic-harness-be:update로 먼저 받으세요.`,
+      );
     for (const [, dest] of files)
       if (existsSync(join(PROJECT, dest))) fail(`${dest}가 이미 있어요.`);
     for (const [p, dest] of files)
-      write(
-        join(PROJECT, dest),
-        rename(showAt(lock.ref, `templates.feature/${p}`)),
-      );
-    // 이름이 바뀌면 import 정렬 순서도 바뀌어요(sample-item → category).
-    run(
-      'npx',
-      [
-        'eslint',
-        '--fix',
-        ...files.map(([, dest]) => dest).filter((f) => f.endsWith('.ts')),
-      ],
-      { stdio: 'ignore' },
-    );
+      write(join(PROJECT, dest), rename(showAt(lock.ref, `${source}/${p}`)));
+    // 이름이 바뀌면 줄 길이와 import 정렬 순서도 바뀌어요(sample-item → category).
+    const created = files
+      .map(([, dest]) => dest)
+      .filter((f) => f.endsWith('.ts'));
+    run('npx', ['prettier', '--write', ...created], { stdio: 'ignore' });
+    run('npx', ['eslint', '--fix', ...created], { stdio: 'ignore' });
     const isRegistered = registerModule(
       `${pascal}Module`,
       `./modules/${name}/index.js`,
     );
     console.log(
-      `✓ ${name} feature를 만들었어요 (경로 /v1/${plural}, 테이블 ${table}).`,
+      `✓ ${name} feature를 만들었어요 (경로 /v1/${plural}${isNoEntity ? '' : `, 테이블 ${table}`}).`,
     );
     console.log(files.map(([, dest]) => `  ${dest}`).join('\n'));
     console.log(
@@ -537,7 +574,9 @@ const commands = {
         : `  직접 할 일: src/app.module.ts의 imports에 ${pascal}Module(./modules/${name}/index.js)을 더해요`,
     );
     console.log(
-      `  다음: entity를 정한 뒤 npm run migration:generate -- ${MIGRATIONS}add-${plural}`,
+      isNoEntity
+        ? '  다음: dto와 service를 채우고, 다른 feature는 그 index.ts의 service로 불러요.'
+        : `  다음: entity를 정한 뒤 npm run migration:generate -- ${MIGRATIONS}add-${plural}`,
     );
   },
 
