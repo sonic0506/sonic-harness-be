@@ -1,0 +1,42 @@
+{
+  "description": "sonic-harness-be: .sonic-harness-be/lock.json이 있는 프로젝트에서만 동작해요",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/format-lint.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/format-lint.sh\"",
+            "timeout": 60,
+            "statusMessage": "format + lint"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/verify.mjs\"",
+            "timeout": 180,
+            "statusMessage": "typecheck + 관련 테스트"
+          }
+        ]
+      }
+    ]
+  }
+}
