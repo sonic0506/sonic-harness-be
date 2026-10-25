@@ -36,7 +36,7 @@ export async function resetDatabase(app: INestApplication): Promise<void> {
 
 export function bearer(
   app: INestApplication,
-  user: AuthUser = { sub: '1', roles: ['user'] },
+  user: Pick<AuthUser, 'sub' | 'roles'> = { sub: '1', roles: ['user'] },
 ): string {
   return `Bearer ${app.get(JwtService).sign(user)}`;
 }

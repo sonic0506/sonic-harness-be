@@ -64,7 +64,16 @@ const REQUEST_ID = /^[\w-]{1,128}$/;
         }),
       ],
     }),
-    JwtModule.register({ global: true, secret: env.JWT_SECRET }),
+    // 알고리즘을 고정하고, 발급하는 토큰에는 만료(exp)를 붙여요.
+    JwtModule.register({
+      global: true,
+      secret: env.JWT_SECRET,
+      signOptions: {
+        algorithm: 'HS256',
+        expiresIn: env.JWT_EXPIRES_IN_SECONDS,
+      },
+      verifyOptions: { algorithms: ['HS256'] },
+    }),
     ThrottlerModule.forRoot([
       { ttl: env.THROTTLE_TTL_MS, limit: env.THROTTLE_LIMIT },
     ]),

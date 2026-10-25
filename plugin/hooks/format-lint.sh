@@ -7,6 +7,7 @@ f=$(jq -r '.tool_input.file_path // empty' <<<"$input")
 event=$(jq -r '.hook_event_name // empty' <<<"$input")
 root="${CLAUDE_PROJECT_DIR:-$PWD}"
 case "$f" in "$root"/*) ;; *) exit 0 ;; esac   # 프로젝트 밖 파일은 건너뛰어요
+case "$f" in */../*|*/..) exit 0 ;; esac        # ..로 프로젝트 밖을 가리키는 경로도 건너뛰어요
 [ -f "$root/.sonic-harness-be/lock.json" ] || exit 0   # 하네스를 적용한 프로젝트에서만 동작해요
 case "$f" in "$root"/.sonic-harness-be/*) exit 0 ;; esac   # 하네스 파일 자체는 검사하지 않아요
 case "$f" in "$root"/src/infra/database/migrations/*) exit 0 ;; esac   # TypeORM이 만든 migration은 그대로 둬요

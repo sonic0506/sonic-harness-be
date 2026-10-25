@@ -67,6 +67,7 @@ const DEV_DEPS = [
   'msw@2',
   'testcontainers@12',
   '@testcontainers/postgresql@12',
+  'dependency-cruiser@18',
 ];
 const DEPS = [
   '@nestjs/typeorm@12',
@@ -104,6 +105,12 @@ const SCRIPTS = {
   'migration:generate': 'nest build && npm run typeorm -- migration:generate',
   'migration:run': 'nest build && npm run typeorm -- migration:run',
   'migration:revert': 'nest build && npm run typeorm -- migration:revert',
+  // migration을 모두 적용한 뒤 entity와 차이가 있으면 실패해요(CI).
+  'migration:check':
+    'nest build && npm run typeorm -- migration:run && npm run typeorm -- migration:generate src/infra/database/migrations/pending --check',
+  openapi: 'nest build && node scripts/openapi.mjs',
+  'openapi:check': 'nest build && node scripts/openapi.mjs --check',
+  'lint:cycles': 'depcruise src --config .dependency-cruiser.cjs',
   prepare: 'husky',
 };
 const SWAGGER_PLUGIN = {
@@ -113,6 +120,7 @@ const SWAGGER_PLUGIN = {
 // nest new가 만드는 시작 파일. 아직 손대지 않은 프로젝트(app.service.ts가 Hello World)면
 // 하네스 템플릿으로 바꾸고 예시 파일과 다른 lint·format 설정을 지워요.
 const STARTER_REPLACE = [
+  'README.md',
   'src/main.ts',
   'src/app.module.ts',
   'vitest.config.ts',
@@ -337,6 +345,11 @@ const commands = {
     const ts = readJson(tsPath);
     delete ts.compilerOptions?.strict;
     delete ts.compilerOptions?.strictPropertyInitialization;
+    // @/ 별칭은 strict 묶음에도 있지만 ${configDir}를 못 읽는 도구(dependency-cruiser)가 있어 프로젝트에도 적어요.
+    ts.compilerOptions = {
+      ...ts.compilerOptions,
+      paths: { '@/*': ['./src/*'] },
+    };
     writeJson(tsPath, {
       ...ts,
       extends: `./${DIR_NAME}/tsconfig.strict.json`,

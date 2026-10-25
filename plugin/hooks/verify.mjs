@@ -10,7 +10,9 @@ const root = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 // 이미 한 번 막아서 다시 고치는 중이면 또 막지 않아요(끝없이 반복하지 않게).
 if (input.stop_hook_active) process.exit(0);
 if (!existsSync(join(root, '.sonic-harness-be/lock.json'))) process.exit(0);
-if (!existsSync(join(root, 'node_modules/.bin/vitest'))) process.exit(0);
+// 프로젝트에 설치된 실행 파일만 써요. npx는 없으면 레지스트리에서 받아 실행해서 쓰지 않아요.
+const bin = (name) => join(root, 'node_modules/.bin', name);
+if (!existsSync(bin('tsc')) || !existsSync(bin('vitest'))) process.exit(0);
 
 // src·test만 봐요(node_modules가 .gitignore에 없어도 출력이 버퍼를 넘지 않게).
 const status = spawnSync(
@@ -30,16 +32,15 @@ const changed = status.stdout
   .filter((f) => /^(src|test)\/.*\.ts$/.test(f) && existsSync(join(root, f)));
 if (!changed.length) process.exit(0);
 
-const run = (args) =>
-  spawnSync('npx', args, { cwd: root, encoding: 'utf8', timeout: 150_000 });
+const run = (name, args) =>
+  spawnSync(bin(name), args, { cwd: root, encoding: 'utf8', timeout: 150_000 });
 const failures = [];
-const tsc = run(['tsc', '--noEmit']);
+const tsc = run('tsc', ['--noEmit']);
 if (tsc.status !== 0)
   failures.push(`typecheck 실패:\n${tsc.stdout}${tsc.stderr}`);
 const srcFiles = changed.filter((f) => f.startsWith('src/'));
 if (srcFiles.length) {
-  const test = run([
-    'vitest',
+  const test = run('vitest', [
     'related',
     '--run',
     '--passWithNoTests',

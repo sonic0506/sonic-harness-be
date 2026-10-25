@@ -2,6 +2,7 @@ import {
   HttpStatus,
   type INestApplication,
   ValidationPipe,
+  type VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
 import {
@@ -17,12 +18,18 @@ import { AppModule } from './app.module.js';
 import { AppException } from './common/exceptions/app.exception.js';
 import { env } from './config/env.js';
 
+// 모든 경로는 /v1/... 이에요. OpenAPI 스크립트(scripts/openapi.mjs)도 이 값을 써요.
+export const VERSIONING: VersioningOptions = {
+  type: VersioningType.URI,
+  defaultVersion: '1',
+};
+
 // main.ts와 e2e 테스트가 같은 설정으로 앱을 띄우도록 여기에 모아요.
 export function configureApp(app: INestApplication): void {
   app.useLogger(app.get(Logger));
   app.use(helmet());
   app.enableCors({ origin: env.CORS_ORIGINS, credentials: true });
-  app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+  app.enableVersioning(VERSIONING);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

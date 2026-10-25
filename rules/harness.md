@@ -65,6 +65,7 @@ src/
 - 핸들러는 반환 타입을 `Promise<XxxResponseDto>`처럼 적어요. Entity를 그대로 돌려주지 않아요(lint: `sonic-be/handler-return-dto`). 변환은 응답 DTO의 `static from(entity)` 하나로 해요.
 - 수정 DTO는 `PartialType(CreateXxxDto)`(`@nestjs/swagger`)로 만들어요. 보낸 필드만 검증하고 바꿔요.
 - Swagger는 Nest CLI 플러그인이 DTO와 JSDoc 주석으로 만들어요. 필드와 핸들러에 `/** 설명 */`을 달고, controller에 `@ApiTags`를 붙여요. 개발 환경에서 `/docs`로 봐요.
+- `openapi.json`은 코드에서 만든 API 문서예요(`npm run openapi`). API를 바꾸면 다시 만들어 커밋해요. CI가 코드와 다르면 실패하고, 이전 버전과 호환되지 않으면(필드 삭제, 타입 변경) 실패해요. 그런 변경이 꼭 필요하면 새 버전(`/v2`)으로 만들어요.
 
 ### 응답 형식
 
@@ -129,11 +130,13 @@ npm run migration:revert
 ```
 
 migration 이름은 kebab-case로 줘요. 생성된 파일은 고치지 않는 게 원칙이고, 기본 데이터(공통 코드 그룹 등)만 `up`에 `INSERT`로 더해요.
+CI는 migration을 모두 적용한 뒤 entity와 차이가 있으면(= migration 누락) 실패해요(`npm run migration:check`).
 
 ## 5. 보안
 
 - 환경 변수는 `src/config/env.ts`(zod)에서만 읽어요(lint: `sonic-be/no-direct-env`). 키를 바꾸면 `.env.example`도 바꿔요. 비밀 값은 코드에 쓰지 않아요.
 - **모든 API는 기본으로 로그인이 필요해요**(전역 `JwtAuthGuard`). 공개할 API에만 `@Public()`을 붙여요. 권한은 `@Roles('admin')`로 정해요. e2e `auth-guard.e2e-spec.ts`가 `@Public()`이 아닌 모든 라우트를 모아 토큰 없이 401인지 자동으로 확인해요.
+- **로그인만으로는 권한이 아니에요.** feature 뼈대는 로그인만 확인해요. 엔드포인트마다 관리자 전용(`@Roles('admin')`)인지, 본인 데이터만(`request.user.sub`로 repository 조회 범위를 좁히고 남의 것은 404)인지 정하고, 권한이 없을 때의 403·404를 e2e로 확인해요.
 - 응답에는 응답 DTO에 적은 필드만 나가요. entity를 그대로 돌려주지 않아요.
 - CORS는 `CORS_ORIGINS`에 적은 곳만 열어요(운영에서 `*` 금지). 요청 수 제한(throttler)과 보안 헤더(helmet)는 전역으로 켜져 있어요.
 - 업로드는 `@UploadedFile(new ParseFilePipe({ validators: [new MaxFileSizeValidator(...), new FileTypeValidator(...)] }))`로 크기·형식을 검증해요(lint: `sonic-be/uploaded-file-pipe`).
@@ -267,6 +270,22 @@ export class CreateProductDto {
 - compositions는 조합과 응답 변환만 해요. 다른 feature의 `index.ts`(service)로만 가져오고, repository·entity를 둘 수 없어요(lint: `boundaries`). 비즈니스 로직을 다시 구현하지 않아요.
 - 서로 독립인 조회는 `Promise.all`로 병렬로 불러요. 기본 정책은 **하나라도 실패하면 전체 실패**예요. 부분 응답이 필요하면 `Promise.allSettled`를 쓰고 응답 DTO에 섹션마다 `error` 필드를 둬요.
 - 통합 API 하나가 feature 6개 이상에 기대면 화면이나 유스케이스 단위로 나눠요(lint: `sonic-be/composition-max-deps`, warn).
+
+## 14. 자동 검사 (CI)
+
+`.github/workflows/ci.yml`이 PR과 main push마다 돌아요. job 이름이 branch protection의 필수 check예요.
+
+| job         | 검사                                                                                                                                         |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lint`      | ESLint(경계·이름·TypeScript), typecheck, Prettier, 순환 의존(`npm run lint:cycles`), `.env.example`과 env 스키마 키, controller마다 e2e 파일 |
+| `test`      | 단위 테스트와 service 커버리지 80%                                                                                                           |
+| `e2e`       | Testcontainers Postgres 위 e2e                                                                                                               |
+| `openapi`   | `openapi.json`이 코드와 같은지, Spectral(경로 kebab-case, DELETE 204, POST 201), 이전 버전과 호환(oasdiff)                                   |
+| `migration` | migration 누락                                                                                                                               |
+| `security`  | 비밀 값 커밋(gitleaks), 운영 의존성 critical 취약점(npm audit), 새 패키지의 이유(PR 본문 "새 의존성")                                        |
+
+- 순환 의존은 컴파일 결과로 봐요. Nest는 생성자 주입 타입도 실행할 때 불러와서, 타입으로만 쓴 import도 순환이에요.
+- npm audit은 운영 의존성의 critical만 막아요. high는 Dependabot(`.github/dependabot.yml`) 보안 업데이트로 따라가요.
 
 ## FAQ
 

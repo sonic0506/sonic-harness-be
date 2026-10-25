@@ -9,6 +9,7 @@ import {
   VERSION_METADATA,
 } from '@nestjs/common/constants.js';
 import { DiscoveryModule, DiscoveryService, Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 
 import { IS_PUBLIC_KEY } from '@/common/auth/auth.decorators.js';
@@ -78,6 +79,19 @@ describe('전역 인증 guard', () => {
       const response = await request(app.getHttpServer())[route.method](
         route.path,
       );
+      expect(response.status, `${route.method} ${route.path}`).toBe(401);
+    }
+  });
+
+  it('만료(exp)가 없는 토큰이면 401을 돌려줘요', async () => {
+    // 앱의 JwtService는 늘 exp를 붙여서, 만료 옵션 없이 같은 비밀 값으로 따로 서명해요.
+    const token = new JwtService({ secret: process.env.JWT_SECRET }).sign({
+      sub: '1',
+      roles: ['admin'],
+    });
+    for (const route of protectedRoutes(app)) {
+      const call = request(app.getHttpServer())[route.method](route.path);
+      const response = await call.set('Authorization', `Bearer ${token}`);
       expect(response.status, `${route.method} ${route.path}`).toBe(401);
     }
   });

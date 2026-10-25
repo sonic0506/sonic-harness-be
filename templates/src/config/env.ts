@@ -10,6 +10,8 @@ const envSchema = z
     TZ: z.literal('UTC').default('UTC'),
     DATABASE_URL: z.url(),
     JWT_SECRET: z.string().min(32),
+    // 발급 토큰의 유효 시간(초)
+    JWT_EXPIRES_IN_SECONDS: z.coerce.number().int().positive().default(3600),
     CORS_ORIGINS: z
       .string()
       .default('')

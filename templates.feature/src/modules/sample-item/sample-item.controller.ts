@@ -21,6 +21,7 @@ import { SampleItemResponseDto } from './dto/sample-item-response.dto.js';
 import { UpdateSampleItemDto } from './dto/update-sample-item.dto.js';
 import { SampleItemService } from './sample-item.service.js';
 
+// 권한: 뼈대는 로그인만 확인해요. 이 feature에 맞게 @Roles('admin')이나 소유자 범위(request.user.sub)를 정해요(harness.md 5절).
 @ApiTags('sample-items')
 @Controller('sample-items')
 export class SampleItemController {

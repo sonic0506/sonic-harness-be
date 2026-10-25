@@ -27,6 +27,11 @@ _NestJS + TypeScript 코딩 규칙을 글이 아니라 도구로 지키게 하�
 
 hook은 파일을 쓰기 전에 경로(kebab-case)를 검사하고, 쓴 뒤 Prettier와 `eslint --fix`를 실행해요. Claude가 작업을 끝내려 할 때는 typecheck와 바뀐 파일의 단위 테스트를 돌리고, 실패하면 끝내지 못하게 해요.
 
+CI(`.github/workflows/ci.yml`)는 lint·typecheck·순환 의존·단위·e2e·OpenAPI(코드 일치, 규칙, 호환성)·migration 누락·비밀 값·취약점을 검사해요. init이 이 check들을 main 브랜치의 필수 check로 거는 명령을 안내해요.
+
+> [!NOTE]
+> hook은 `.sonic-harness-be/lock.json`이 있는 프로젝트에서 그 프로젝트의 `node_modules`에 설치된 Prettier·ESLint·tsc·Vitest를 실행해요. 믿을 수 없는 저장소를 열 때는 플러그인을 꺼 두세요.
+
 ## 저장소 구조
 
 ```text
