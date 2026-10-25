@@ -70,7 +70,15 @@ const COMMON = { type: 'common' };
 const CONFIG = { type: 'config' };
 const INFRA = { type: 'infra' };
 const ALLOWED = {
-  controller: [same('service'), same('dto'), same('model'), COMMON, CONFIG],
+  // controller → exception은 Swagger 문서(@ApiErrors)용이에요. 던지는 곳은 service예요.
+  controller: [
+    same('service'),
+    same('dto'),
+    same('exception'),
+    same('model'),
+    COMMON,
+    CONFIG,
+  ],
   service: [
     same('service'),
     same('repository'),
@@ -86,7 +94,8 @@ const ALLOWED = {
   repository: [same('entity'), same('model'), COMMON, CONFIG, INFRA],
   dto: [same('dto'), same('entity'), same('model'), ANY_INDEX, COMMON],
   entity: [same('entity'), same('model'), ANY_INDEX, COMMON],
-  exception: [same('model'), COMMON],
+  // 다른 feature의 예외를 다시 내보낼 때만 그 index.ts를 가져와요(그 service가 던져 이 API까지 오는 예외, @ApiErrors용).
+  exception: [same('model'), ANY_INDEX, COMMON],
   validator: [same('service'), same('model'), COMMON],
   model: [same('model'), COMMON],
   module: [

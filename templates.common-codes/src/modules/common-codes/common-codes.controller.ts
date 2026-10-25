@@ -11,8 +11,14 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 
 import { Roles } from '@/common/auth/auth.decorators.js';
+import { ApiErrors } from '@/common/exceptions/api-errors.js';
 import { OptionDto } from '@/common/options/option.dto.js';
 
+import {
+  CommonCodeDuplicateException,
+  CommonCodeGroupNotFoundException,
+  CommonCodeNotFoundException,
+} from './common-codes.exception.js';
 import { CommonCodesService } from './common-codes.service.js';
 import { CommonCodeResponseDto } from './dto/common-code-response.dto.js';
 import { CreateCommonCodeDto } from './dto/create-common-code.dto.js';
@@ -25,6 +31,7 @@ export class CommonCodesController {
 
   /** 선택 목록: 활성 코드만 정렬 순서대로 { value, label }로 돌려줘요. */
   @Get(':groupId/options')
+  @ApiErrors(CommonCodeGroupNotFoundException)
   findOptions(@Param('groupId') groupId: string): Promise<OptionDto[]> {
     return this.commonCodesService.findOptions(groupId);
   }
@@ -32,6 +39,7 @@ export class CommonCodesController {
   /** 관리용 목록(비활성 포함) */
   @Get(':groupId')
   @Roles('admin')
+  @ApiErrors(CommonCodeGroupNotFoundException)
   findAll(@Param('groupId') groupId: string): Promise<CommonCodeResponseDto[]> {
     return this.commonCodesService.findAll(groupId);
   }
@@ -39,6 +47,7 @@ export class CommonCodesController {
   /** 코드를 추가해요. */
   @Post(':groupId')
   @Roles('admin')
+  @ApiErrors(CommonCodeGroupNotFoundException, CommonCodeDuplicateException)
   @HttpCode(HttpStatus.CREATED)
   create(
     @Param('groupId') groupId: string,
@@ -50,6 +59,7 @@ export class CommonCodesController {
   /** 이름·정렬·사용 여부를 바꿔요. 코드 값은 바꿀 수 없고, 삭제 대신 isActive: false로 꺼요. */
   @Patch(':groupId/:code')
   @Roles('admin')
+  @ApiErrors(CommonCodeGroupNotFoundException, CommonCodeNotFoundException)
   update(
     @Param('groupId') groupId: string,
     @Param('code') code: string,

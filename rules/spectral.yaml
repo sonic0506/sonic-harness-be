@@ -33,3 +33,11 @@ rules:
     then:
       field: '204'
       function: truthy
+  path-param-documents-404:
+    description: path 파라미터로 대상을 찾는 API는 404를 적어요.
+    message: '{{path}}: 대상이 없을 때의 예외를 @ApiErrors(XxxNotFoundException)로 적어요(harness.md 2절). 404가 날 수 없으면 무시해도 돼요.'
+    severity: warn
+    given: '$.paths[?(@property.match(/\{/))][get,put,patch,delete].responses'
+    then:
+      field: '404'
+      function: truthy
