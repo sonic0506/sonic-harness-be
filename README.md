@@ -42,4 +42,18 @@ templates/                       init 때 없는 파일만 복사하는 시작 �
 templates.feature/               /sonic-harness-be:feature 뼈대 (sample-item을 새 이름으로 바꿔요)
 templates.common-codes/          init에서 공통 코드를 Y로 고르면 더하는 파일
 tests/lint-samples/              ESLint 규칙 테스트 (npm run test:lint)
+evals/                           Claude 행동 평가 (hook·init 확인, 기준 작업 5개)
 ```
+
+## 평가
+
+Claude가 하네스를 실제로 따르는지 기준 작업으로 확인해요. 평가는 개인 전역 설정 없이 이 저장소의 플러그인만 얹어서 실행하고, Docker가 필요해요. 원본은 이 저장소의 **커밋된** 상태예요.
+
+| 스크립트                     | 확인하는 것                                                                                                            |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `evals/setup-sandbox.sh`     | 평가용 Nest 프로젝트(`sandbox/nest`, 공통 코드 켬)를 플러그인 스크립트로 새로 만들어요                                 |
+| `evals/hook-check.sh`        | 규칙을 어긴 파일을 hook이 막고, 최종 파일이 lint·typecheck를 통과하는지 확인해요                                       |
+| `evals/init-check.sh [y\|n]` | 새 `nest new` 프로젝트에서 `/sonic-harness-be:init`(공통 코드 Y·N)만으로 lint·test·build·CI 검사가 통과하는지 확인해요 |
+| `evals/run.sh [작업]`        | 기준 작업 5개를 [`evals/checklist.md`](./evals/checklist.md)로 채점하고 결과 코드를 `evals/results/*.patch`로 남겨요   |
+
+규칙을 바꿀 때는 `tests/lint-samples`에 위반·준수 샘플을 넣고(`npm run test:lint`), `rules/CHANGELOG.md`에 한 줄을 쓰고, `evals/run.sh`로 이전 결과와 비교해요. 명령어나 hook을 바꿨다면 `plugin/.claude-plugin/plugin.json`의 `version`을 올려요.
