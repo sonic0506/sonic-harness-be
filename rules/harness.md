@@ -29,12 +29,13 @@ src/
 
 | 파일       | 가져올 수 있는 것                                                                                                  |
 | ---------- | ------------------------------------------------------------------------------------------------------------------ |
-| controller | 같은 feature의 service·dto·constants, common, config                                                               |
+| controller | 같은 feature의 service·dto·exception(`@ApiErrors`용)·constants, common, config                                     |
 | service    | 같은 feature의 service·repository·dto·entity·exception·constants, 다른 feature의 `index.ts`, common, config, infra |
 | repository | 같은 feature의 entity·constants, common, config, infra                                                             |
 | dto        | 같은 feature의 dto·entity·constants, 다른 feature의 `index.ts`, common                                             |
 | entity     | 같은 feature의 entity·constants, 다른 feature의 `index.ts`(relation), common                                       |
 | module     | 같은 feature의 controller·service·repository·entity·validator·constants, 다른 feature의 `index.ts`                 |
+| exception  | 같은 feature의 constants, 다른 feature의 `index.ts`(그 feature 예외를 다시 내보낼 때만), common                    |
 | common     | common, config (feature를 가져오지 않아요)                                                                         |
 
 - 방향은 `controller → service → repository`예요. controller가 repository나 TypeORM을 직접 쓰지 않아요.
@@ -86,9 +87,49 @@ src/
 }
 ```
 
+### 에러 응답 문서 (Swagger)
+
+Swagger(`/docs`, `openapi.json`)의 에러 응답은 모두 `ProblemDetailsDto` 스키마와 코드별 예시로 나와요(`common/exceptions/api-errors.ts`).
+
+| 상태  | 붙는 곳                                                                    | 방법                                        |
+| ----- | -------------------------------------------------------------------------- | ------------------------------------------- |
+| 400   | body·query를 받는 API(`VALIDATION_FAILED`), 숫자 path 파라미터(`HTTP_400`) | 자동                                        |
+| 401   | `@Public()`이 아닌 API(`HTTP_401`)                                         | 자동. `@Public()`이면 자물쇠도 빠져요       |
+| 403   | `@Roles()`를 붙인 API(`HTTP_403`)                                          | 자동                                        |
+| 그 밖 | handler가 받는 비즈니스 예외(`ORDER_ITEM_NOT_FOUND` 등)                    | **`@ApiErrors(예외 클래스, ...)`로 적어요** |
+
+```ts
+@ApiErrors(OrderItemNotFoundException, OrderItemForbiddenException)
+@Patch(':id')
+update(...): Promise<OrderItemResponseDto> {}
+```
+
+- service에서 던져 그 API까지 오는 예외는 모두 적어요. Nest Swagger 플러그인은 반환 타입만 보고, service 안의 `throw`는 모르기 때문이에요.
+- `@ApiErrors`는 handler마다 한 번만 붙여요(같은 상태 코드의 예외는 한 응답에 예시로 모여요).
+- 예외 클래스에는 `static readonly code`·`status`·`example`을 둬요(3절). 없으면 `@ApiErrors`에 넣을 때 컴파일 에러예요.
+- 다른 feature의 service가 던지는 예외(예: 댓글 API의 `POST_NOT_FOUND`)는 그 feature `index.ts`에서 내보내고, 이 feature의 `*.exception.ts`에서 다시 내보내 controller가 가져와요: `export { PostNotFoundException } from '@/modules/post/index.js';`
+
 ## 3. 예외와 로깅
 
 - 비즈니스 예외는 `AppException(code, status, message)`을 상속해 feature의 `*.exception.ts`에 둬요. `throw new Error`는 쓰지 않아요(lint: `sonic-be/no-generic-error`).
+- 예외 클래스에는 Swagger 예시(`@ApiErrors`, 2절)가 읽는 `static` 값을 둬요.
+
+```ts
+export class OrderItemNotFoundException extends AppException {
+  static readonly code = 'ORDER_ITEM_NOT_FOUND';
+  static readonly status = HttpStatus.NOT_FOUND;
+  static readonly example = 'order-item 1을(를) 찾을 수 없어요.';
+
+  constructor(id: number) {
+    super(
+      OrderItemNotFoundException.code,
+      OrderItemNotFoundException.status,
+      `order-item ${id}을(를) 찾을 수 없어요.`,
+    );
+  }
+}
+```
+
 - `NotFoundException` 같은 HTTP 예외는 controller와 common(필터·guard)에서만 써요. service는 HTTP를 몰라요(lint: `no-restricted-imports`).
 - 알 수 없는 예외는 필터가 500으로 바꾸고 로그를 남겨요. 운영에서는 내부 메시지를 응답에 넣지 않아요.
 - 예외를 잡아서 조용히 넘기지 않아요. 잡았으면 다시 던지거나 다른 예외로 바꿔요.

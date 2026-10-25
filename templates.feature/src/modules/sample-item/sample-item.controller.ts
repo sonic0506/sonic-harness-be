@@ -13,14 +13,17 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
+import { ApiErrors } from '@/common/exceptions/api-errors.js';
 import { PageDto } from '@/common/pagination/page.dto.js';
 import { PageQueryDto } from '@/common/pagination/page-query.dto.js';
 
 import { CreateSampleItemDto } from './dto/create-sample-item.dto.js';
 import { SampleItemResponseDto } from './dto/sample-item-response.dto.js';
 import { UpdateSampleItemDto } from './dto/update-sample-item.dto.js';
+import { SampleItemNotFoundException } from './sample-item.exception.js';
 import { SampleItemService } from './sample-item.service.js';
 
+// 에러: 던질 수 있는 비즈니스 예외는 @ApiErrors로 Swagger에 적어요(400·401·403은 자동이에요).
 // 권한: 뼈대는 로그인만 확인해요. 이 feature에 맞게 @Roles('admin')이나 소유자 범위(request.user.sub)를 정해요(harness.md 5절).
 @ApiTags('sample-items')
 @Controller('sample-items')
@@ -36,6 +39,7 @@ export class SampleItemController {
   }
 
   /** 하나를 조회해요. */
+  @ApiErrors(SampleItemNotFoundException)
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
@@ -51,6 +55,7 @@ export class SampleItemController {
   }
 
   /** 보낸 필드만 바꿔요. */
+  @ApiErrors(SampleItemNotFoundException)
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -60,6 +65,7 @@ export class SampleItemController {
   }
 
   /** 지워요. */
+  @ApiErrors(SampleItemNotFoundException)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   delete(@Param('id', ParseIntPipe) id: number): Promise<void> {

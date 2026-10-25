@@ -15,7 +15,9 @@ import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app.module.js';
+import { addErrorResponses } from './common/exceptions/api-errors.js';
 import { AppException } from './common/exceptions/app.exception.js';
+import { ProblemDetailsDto } from './common/exceptions/problem-details.dto.js';
 import { env } from './config/env.js';
 
 // 모든 경로는 /v1/... 이에요. OpenAPI 스크립트(scripts/openapi.mjs)도 이 값을 써요.
@@ -59,5 +61,10 @@ export function createOpenApiDocument(app: INestApplication): OpenAPIObject {
     .addBearerAuth()
     .addSecurityRequirements('bearer')
     .build();
-  return SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, config, {
+    extraModels: [ProblemDetailsDto],
+  });
+  // 에러 응답(RFC 9457)과 예시: 공통 400·401·403은 자동, 비즈니스 예외는 @ApiErrors로 적어요.
+  addErrorResponses(document);
+  return document;
 }
