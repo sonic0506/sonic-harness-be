@@ -1,0 +1,62 @@
+# 03-common-code-field (20261025-1615, sonnet)
+
+## 자동 확인
+
+| 항목 | 결과 |
+|---|---|
+| 1 lint | ✅ |
+| 2 typecheck | ✅ |
+| 3 test (새 service 단위 테스트 있음) | ✅ |
+| 4 test:e2e | ✅ |
+| 5 eslint-disable·ts-ignore·any 없음 | ✅ |
+| 6 harness-checks env e2e | ✅ |
+| 7 lint:cycles | ✅ |
+| 8 openapi:check | ✅ |
+| 9 migration:check | ✅ |
+| 10 build | ✅ |
+
+## 수동 확인 (checklist.md 11–16 + 작업별)
+
+- [ ] 11 feature 뼈대 구조
+- [ ] 12 권한·403/404 e2e
+- [ ] 13 레이어
+- [ ] 14 e2e 필수 케이스
+- [ ] 15 불필요한 것 없음
+- [ ] 16 완료 보고 형식
+- [ ] 작업별 항목
+
+## hook이 막은 기록 (5회)
+
+```
+PostToolUse src/modules/product/product.constants.ts
+PostToolUse test/product.e2e-spec.ts
+PostToolUse test/product.e2e-spec.ts
+PostToolUse test/product.e2e-spec.ts
+PostToolUse test/product.e2e-spec.ts
+```
+
+## 만든 파일
+
+```
+ M openapi.json
+ M src/app.module.ts
+ M src/modules/common-codes/common-code-groups.constants.ts
+ M test/common-codes.e2e-spec.ts
+ M test/setup/seed-tables.ts
+?? src/infra/database/migrations/1792913058964-add-products.ts
+?? src/modules/product/dto/create-product.dto.ts
+?? src/modules/product/dto/product-response.dto.ts
+?? src/modules/product/dto/update-product.dto.ts
+?? src/modules/product/entities/product.entity.ts
+?? src/modules/product/index.ts
+?? src/modules/product/product.constants.ts
+?? src/modules/product/product.controller.ts
+?? src/modules/product/product.exception.ts
+?? src/modules/product/product.module.ts
+?? src/modules/product/product.repository.ts
+?? src/modules/product/product.service.spec.ts
+?? src/modules/product/product.service.ts
+?? test/product.e2e-spec.ts
+```
+
+결과 코드: `20261025-1615-03-common-code-field.patch` (sandbox에서 git apply) · 로그: `20261025-1615-03-common-code-field.jsonl`

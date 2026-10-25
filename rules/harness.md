@@ -136,6 +136,7 @@ CI는 migration을 모두 적용한 뒤 entity와 차이가 있으면(= migratio
 
 - 환경 변수는 `src/config/env.ts`(zod)에서만 읽어요(lint: `sonic-be/no-direct-env`). 키를 바꾸면 `.env.example`도 바꿔요. 비밀 값은 코드에 쓰지 않아요.
 - **모든 API는 기본으로 로그인이 필요해요**(전역 `JwtAuthGuard`). 공개할 API에만 `@Public()`을 붙여요. 권한은 `@Roles('admin')`로 정해요. e2e `auth-guard.e2e-spec.ts`가 `@Public()`이 아닌 모든 라우트를 모아 토큰 없이 401인지 자동으로 확인해요.
+- 로그인한 사용자는 handler에서 `@CurrentUser() user: AuthUser`로 받아요(`request.user`를 직접 읽거나 빈 값으로 대신하지 않아요).
 - **로그인만으로는 권한이 아니에요.** feature 뼈대는 로그인만 확인해요. 엔드포인트마다 관리자 전용(`@Roles('admin')`)인지, 본인 데이터만(`request.user.sub`로 repository 조회 범위를 좁히고 남의 것은 404)인지 정하고, 권한이 없을 때의 403·404를 e2e로 확인해요.
 - 응답에는 응답 DTO에 적은 필드만 나가요. entity를 그대로 돌려주지 않아요.
 - CORS는 `CORS_ORIGINS`에 적은 곳만 열어요(운영에서 `*` 금지). 요청 수 제한(throttler)과 보안 헤더(helmet)는 전역으로 켜져 있어요.
@@ -168,6 +169,7 @@ export type Role = (typeof ROLES)[number];
 | 인증               | `auth-guard.e2e-spec.ts`가 자동으로                                          | 토큰 없음·잘못된 토큰 401                         |
 | 검증기·도메인 규칙 | 단위 테스트                                                                  | 통과·실패 경계, 장애                              |
 
+- `@Transactional()`이 붙은 service의 단위 테스트는 `test/setup/transactional.ts`의 `noOpTransactionalModule`을 imports에 더하고 호출을 `runInCls(moduleRef, () => ...)`로 감싸요. 트랜잭션이 실제로 묶이는지는 e2e에서 확인해요.
 - 버그를 고칠 때는 그 버그를 재현하는 테스트를 먼저 써요.
 - 프로젝트 모듈을 `vi.mock`으로 바꾸지 않아요(lint: `sonic-be/no-internal-mock`). 외부 HTTP API는 MSW(`test/setup/msw.ts`의 `server.use`)로 바꿔요.
 - e2e는 파일마다 `resetDatabase(app)`로 DB를 비워요. migration이 기본 데이터를 넣는 테이블은 `test/setup/seed-tables.ts`에 적어 남겨요.

@@ -6,12 +6,9 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import type { Request } from 'express';
 
 import { IS_PUBLIC_KEY } from './auth.decorators.js';
-import { type AuthUser, authUserSchema } from './roles.js';
-
-export type AuthRequest = Request & { user?: AuthUser };
+import { type AuthRequest, authUserSchema } from './roles.js';
 
 const BEARER = /^Bearer (.+)$/;
 

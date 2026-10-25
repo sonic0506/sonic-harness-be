@@ -35,7 +35,7 @@ for task in "$here"/evals/tasks/*${1:-}*.md; do
   # 전역 설정·플러그인·MCP 없이, 이 저장소의 플러그인(plugin/)만 얹어서 실행해요.
   HARNESS_HOOK_LOG="$hooklog" claude -p "$(cat "$task")" --model "${MODEL:-sonnet}" --permission-mode acceptEdits \
     --setting-sources project,local --strict-mcp-config --plugin-dir "$here/plugin" \
-    --allowedTools "Bash(npm run *)" "Bash(npm test*)" "Bash(npx vitest*)" "Bash(npx eslint*)" "Bash(npx tsc*)" "Bash(node scripts/*)" \
+    --allowedTools "Bash(npm run *)" "Bash(npm test*)" "Bash(npx vitest*)" "Bash(npx eslint*)" "Bash(npx tsc*)" "Bash(node scripts/*)" "Bash(node:*)" \
     --output-format stream-json --verbose > "$log" 2>&1
   if grep -q 'Failed to authenticate' "$log"; then
     echo "  claude 인증이 만료됐어요. 터미널에서 claude를 실행해 /login 한 뒤 다시 실행하세요."; exit 1

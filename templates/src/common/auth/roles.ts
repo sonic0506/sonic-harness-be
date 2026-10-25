@@ -1,3 +1,4 @@
+import type { Request } from 'express';
 import { z } from 'zod';
 
 export const ROLES = ['admin', 'user'] as const;
@@ -10,3 +11,5 @@ export const authUserSchema = z.object({
   exp: z.number(),
 });
 export type AuthUser = z.infer<typeof authUserSchema>;
+
+export type AuthRequest = Request & { user?: AuthUser };
