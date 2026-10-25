@@ -174,6 +174,20 @@ async create(fields: Pick<User, 'email' | 'nickname'>): Promise<User | null> {
 }
 ```
 
+- **DB 이름은 snake_case예요.** 테이블은 `@Entity('order_items')`로 직접 적고, 컬럼·FK·조인 테이블 이름은 `SnakeNamingStrategy`(`infra/database/snake-naming.strategy.ts`)가 프로퍼티 이름에서 만들어요(`authorId` → `author_id`, `createdAt` → `created_at`). 코드의 프로퍼티는 camelCase 그대로예요.
+  - relation과 FK 컬럼을 함께 둘 때 `@JoinColumn()`에는 `name`을 적지 않아요. strategy가 `author` relation의 FK를 `author_id`로 정해 `authorId` 프로퍼티 컬럼과 합쳐요. `name: 'authorId'`처럼 적으면 컬럼이 따로 하나 더 생겨요.
+  - QueryBuilder는 프로퍼티 이름(`post.authorId`)을 쓰고, raw SQL(`query(...)`)만 DB 이름(`author_id`)을 써요.
+
+```ts
+@Index()
+@Column()
+authorId: number;
+
+@ManyToOne(() => User, { nullable: false })
+@JoinColumn()
+author: User;
+```
+
 - **entity**: 비밀번호 같은 컬럼은 `@Column({ select: false })`로 둬요. relation 옵션은 객체 형태로 써요(`relations: { orders: true }`, 문자열 배열은 오타를 못 잡아요).
 - **날짜**: 시각 컬럼은 `type: 'timestamptz'`예요(lint: `sonic-be/timestamptz-only`). 날짜만은 `'date'`예요. 서버 시간대는 UTC로 고정되고(`env.TZ`), API는 ISO 8601 문자열로 주고받아요.
 - **migration**: 스키마는 migration으로만 바꿔요. `synchronize`는 켜지 않아요(lint: `sonic-be/no-synchronize`).
