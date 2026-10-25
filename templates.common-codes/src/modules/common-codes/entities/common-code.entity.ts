@@ -30,7 +30,8 @@ export class CommonCode {
   sortOrder: number;
 
   @ManyToOne(() => CommonCodeGroup, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'groupId' })
+  // name은 적지 않아요. naming strategy가 group_id로 정해 groupId 컬럼과 합쳐요.
+  @JoinColumn()
   group: CommonCodeGroup;
 
   @CreateDateColumn({ type: 'timestamptz' })
