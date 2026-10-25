@@ -4,6 +4,7 @@ import { PageDto } from '@/common/pagination/page.dto.js';
 import type { PageQueryDto } from '@/common/pagination/page-query.dto.js';
 
 import type { CreateSampleItemDto } from './dto/create-sample-item.dto.js';
+import type { SampleItemPageDto } from './dto/sample-item-page.dto.js';
 import { SampleItemResponseDto } from './dto/sample-item-response.dto.js';
 import type { UpdateSampleItemDto } from './dto/update-sample-item.dto.js';
 import { SampleItemNotFoundException } from './sample-item.exception.js';
@@ -13,7 +14,7 @@ import { SampleItemRepository } from './sample-item.repository.js';
 export class SampleItemService {
   constructor(private readonly sampleItemRepository: SampleItemRepository) {}
 
-  async findPage(query: PageQueryDto): Promise<PageDto<SampleItemResponseDto>> {
+  async findPage(query: PageQueryDto): Promise<SampleItemPageDto> {
     const [items, total] = await this.sampleItemRepository.findPage(
       query.skip,
       query.size,

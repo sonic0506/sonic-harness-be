@@ -72,6 +72,7 @@ src/
 
 - 성공 응답은 감싸지 않고 DTO 그대로예요. 목록만 `{ items, meta: { page, size, total } }`(`PageDto.of`)이에요.
 - 목록 API는 `PageQueryDto`(page, size ≤ 100)를 받아요.
+- 목록 응답 타입은 feature마다 구체 클래스 `XxxPageDto { items: XxxResponseDto[]; meta: PageMetaDto }`로 적어요(feature 뼈대에 있어요). 제네릭 `PageDto<T>`를 반환 타입으로 쓰면 Swagger가 `items` 타입을 몰라 응답 스키마가 비어요. service는 `PageDto.of(...)`를 그대로 돌려줘도 돼요(모양이 같아요).
 - 에러는 전역 필터가 RFC 9457 형식으로 만들어요(`Content-Type: application/problem+json`).
 
 ```json
@@ -160,6 +161,33 @@ export class OrderItemRepository {
 - SQL에 값을 이어 붙이지 않아요. `where('user.name = :name', { name })`, `query('... $1', [id])`처럼 파라미터로 넘겨요(lint: `sonic-be/no-raw-sql-interpolation`).
 - **트랜잭션**: 한 요청에서 두 번 이상 쓰고 함께 성공·실패해야 하면 service 메서드에 `@Transactional()`을 붙여요(lint: `sonic-be/transactional-writes`, warn). 경고가 났는데 트랜잭션이 필요 없으면 이유를 주석으로 남겨요.
 - **N+1**: 반복문·`map` 안에서 repository를 부르지 않아요(lint: `no-await-in-loop`, `sonic-be/no-repository-call-in-loop`). `find({ where: { id: In(ids) }, take })` 한 번으로 가져와요. relation은 `relations: { user: true }`나 `leftJoinAndSelect`로 필요한 곳에서만 불러요. `eager`·lazy relation은 쓰지 않아요(lint: `sonic-be/no-eager-lazy-relation`).
+- **중복(unique 위반)**: 이메일처럼 겹치면 안 되는 값은 unique 제약으로 막고, 미리 조회하지 않아요(동시에 들어오면 조회로는 못 막아요). repository가 `isUniqueViolation(error)`(`infra/database/unique-violation.ts`)로 잡아 `null`·`false`를 돌려주고, service가 409 예외로 바꿔요. 다른 오류는 다시 던져요.
+
+```ts
+async create(fields: Pick<User, 'email' | 'nickname'>): Promise<User | null> {
+  try {
+    return await this.users.save(this.users.create(fields));
+  } catch (error) {
+    if (isUniqueViolation(error)) return null;
+    throw error;
+  }
+}
+```
+
+- **DB 이름은 snake_case예요.** 테이블은 `@Entity('order_items')`로 직접 적고, 컬럼·FK·조인 테이블 이름은 `SnakeNamingStrategy`(`infra/database/snake-naming.strategy.ts`)가 프로퍼티 이름에서 만들어요(`authorId` → `author_id`, `createdAt` → `created_at`). 코드의 프로퍼티는 camelCase 그대로예요.
+  - relation과 FK 컬럼을 함께 둘 때 `@JoinColumn()`에는 `name`을 적지 않아요. strategy가 `author` relation의 FK를 `author_id`로 정해 `authorId` 프로퍼티 컬럼과 합쳐요. `name: 'authorId'`처럼 적으면 컬럼이 따로 하나 더 생겨요.
+  - QueryBuilder는 프로퍼티 이름(`post.authorId`)을 쓰고, raw SQL(`query(...)`)만 DB 이름(`author_id`)을 써요.
+
+```ts
+@Index()
+@Column()
+authorId: number;
+
+@ManyToOne(() => User, { nullable: false })
+@JoinColumn()
+author: User;
+```
+
 - **entity**: 비밀번호 같은 컬럼은 `@Column({ select: false })`로 둬요. relation 옵션은 객체 형태로 써요(`relations: { orders: true }`, 문자열 배열은 오타를 못 잡아요).
 - **날짜**: 시각 컬럼은 `type: 'timestamptz'`예요(lint: `sonic-be/timestamptz-only`). 날짜만은 `'date'`예요. 서버 시간대는 UTC로 고정되고(`env.TZ`), API는 ISO 8601 문자열로 주고받아요.
 - **migration**: 스키마는 migration으로만 바꿔요. `synchronize`는 켜지 않아요(lint: `sonic-be/no-synchronize`).
@@ -178,7 +206,22 @@ CI는 migration을 모두 적용한 뒤 entity와 차이가 있으면(= migratio
 - 환경 변수는 `src/config/env.ts`(zod)에서만 읽어요(lint: `sonic-be/no-direct-env`). 키를 바꾸면 `.env.example`도 바꿔요. 비밀 값은 코드에 쓰지 않아요.
 - **모든 API는 기본으로 로그인이 필요해요**(전역 `JwtAuthGuard`). 공개할 API에만 `@Public()`을 붙여요. 권한은 `@Roles('admin')`로 정해요. e2e `auth-guard.e2e-spec.ts`가 `@Public()`이 아닌 모든 라우트를 모아 토큰 없이 401인지 자동으로 확인해요.
 - 로그인한 사용자는 handler에서 `@CurrentUser() user: AuthUser`로 받아요(`request.user`를 직접 읽거나 빈 값으로 대신하지 않아요).
-- **로그인만으로는 권한이 아니에요.** feature 뼈대는 로그인만 확인해요. 엔드포인트마다 관리자 전용(`@Roles('admin')`)인지, 본인 데이터만(`request.user.sub`로 repository 조회 범위를 좁히고 남의 것은 404)인지 정하고, 권한이 없을 때의 403·404를 e2e로 확인해요.
+- **로그인만으로는 권한이 아니에요.** feature 뼈대는 로그인만 확인해요. 엔드포인트마다 관리자 전용(`@Roles('admin')`)인지, 본인 데이터만인지 정하고, 권한이 없을 때의 403·404를 e2e로 확인해요.
+- **남의 데이터: 403인가 404인가**
+
+| 데이터                                    | 남의 것을 조회·수정·삭제하면 | 방법                                                               |
+| ----------------------------------------- | ---------------------------- | ------------------------------------------------------------------ |
+| 비공개(주문, 결제, 내 설정)               | 404                          | repository 조회 조건에 `user.sub`를 넣어 남의 것은 "없음"으로 봐요 |
+| 공개(게시글, 댓글처럼 누구나 보는 데이터) | 403                          | 찾은 뒤 작성자를 비교해 `XxxForbiddenException`(403)을 던져요      |
+
+존재를 숨겨야 하면 404, 이미 공개된 데이터라 숨길 게 없으면 403이에요.
+
+- **"내" 데이터 API**: 로그인 사용자 기준 API는 `/v1/users/me`, `/v1/users/me/<복수형>`이에요. 다른 feature의 데이터(내가 쓴 글 등)를 user feature에 두면 순환(`user → post → user`)이 생기므로, 그 feature controller에 두거나 여러 feature를 묶으면 `src/compositions/my-page/`에 둬요(13절).
+- **회원가입·로그인**을 만들 때:
+  - 비밀번호는 Node 내장 `crypto.argon2`(argon2id, Node 24.7+)로 해시해요. 새 패키지가 필요 없어요. 비교는 `timingSafeEqual`로 해요.
+  - 해시 컬럼은 `@Column({ select: false })`이고, 로그인 확인 쿼리에서만 `select: { id: true, passwordHash: true }`로 꺼내요.
+  - 없는 이메일도 가짜 해시로 같은 계산을 해서, 응답 시간으로 가입 여부를 알 수 없게 해요. 이메일·비밀번호 중 무엇이 틀렸는지 알려 주지 않아요(같은 401).
+  - 로그인은 `POST /v1/auth-tokens`(`@Public()`, 201)로 `{ accessToken, tokenType: 'Bearer', expiresIn }`을 돌려줘요. payload는 `{ sub: 사용자 id, roles }`이고 만료는 `JwtModule` 설정을 따라요. DB 테이블이 없는 feature라 `feature auth-token --no-entity`로 만들어요.
 - 응답에는 응답 DTO에 적은 필드만 나가요. entity를 그대로 돌려주지 않아요.
 - CORS는 `CORS_ORIGINS`에 적은 곳만 열어요(운영에서 `*` 금지). 요청 수 제한(throttler)과 보안 헤더(helmet)는 전역으로 켜져 있어요.
 - 업로드는 `@UploadedFile(new ParseFilePipe({ validators: [new MaxFileSizeValidator(...), new FileTypeValidator(...)] }))`로 크기·형식을 검증해요(lint: `sonic-be/uploaded-file-pipe`).
@@ -203,19 +246,42 @@ export type Role = (typeof ROLES)[number];
 
 ### 무엇을 테스트하나
 
-| 대상               | 방법                                                                         | 필수 케이스                                       |
-| ------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------- |
-| service            | 단위 테스트(`*.service.spec.ts`), repository만 `overrideProvider`로 바꿔요   | 정상, 없음(예외), 분기마다                        |
-| API                | e2e(`test/{feature}.e2e-spec.ts`), supertest + 실제 Postgres(Testcontainers) | 성공 상태·본문, 검증 실패 400, 없음 404, 권한 403 |
-| 인증               | `auth-guard.e2e-spec.ts`가 자동으로                                          | 토큰 없음·잘못된 토큰 401                         |
-| 검증기·도메인 규칙 | 단위 테스트                                                                  | 통과·실패 경계, 장애                              |
+| 대상               | 방법                                                                                            | 필수 케이스                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| service            | 단위 테스트(`*.service.spec.ts`), repository·다른 feature service만 `overrideProvider`로 바꿔요 | 정상, 없음(예외), 분기마다                        |
+| API                | e2e(`test/{feature}.e2e-spec.ts`), supertest + 실제 Postgres(Testcontainers)                    | 성공 상태·본문, 검증 실패 400, 없음 404, 권한 403 |
+| 인증               | `auth-guard.e2e-spec.ts`가 자동으로                                                             | 토큰 없음·잘못된 토큰 401                         |
+| 검증기·도메인 규칙 | 단위 테스트                                                                                     | 통과·실패 경계, 장애                              |
 
 - `@Transactional()`이 붙은 service의 단위 테스트는 `test/setup/transactional.ts`의 `noOpTransactionalModule`을 imports에 더하고 호출을 `runInCls(moduleRef, () => ...)`로 감싸요. 트랜잭션이 실제로 묶이는지는 e2e에서 확인해요.
+- 다른 feature의 service에 기대는 service(예: `CommentService` → `PostService`)는 그 service도 `overrideProvider`로 바꾸고, 이 service가 부르는 메서드만 `vi.fn<PostService['assertExists']>()`로 채워요. 그 service의 실제 동작은 그 feature의 테스트와 e2e가 확인해요.
+- 단위 테스트에는 `vitest.config.ts`의 `test.env`(가짜 `DATABASE_URL`·`JWT_SECRET`)가 들어가요. 그래서 `@/config/env.js`를 import하는 service도 테스트할 수 있어요. 새 필수 env 키를 더하면 여기에도 가짜 값을 더해요.
 - 버그를 고칠 때는 그 버그를 재현하는 테스트를 먼저 써요.
 - 프로젝트 모듈을 `vi.mock`으로 바꾸지 않아요(lint: `sonic-be/no-internal-mock`). 외부 HTTP API는 MSW(`test/setup/msw.ts`의 `server.use`)로 바꿔요.
 - e2e는 파일마다 `resetDatabase(app)`로 DB를 비워요. migration이 기본 데이터를 넣는 테이블은 `test/setup/seed-tables.ts`에 적어 남겨요.
+- `bearer(app)`는 DB에 없는 사용자(`sub: '1'`)로 토큰만 만들어요. 데이터가 사용자 테이블을 참조하면(작성자 FK 등) 가입 API로 실제 사용자를 만드는 도우미를 `test/setup/`에 두고 써요.
+
+```ts
+// test/setup/users.ts
+export async function signUp(
+  app: INestApplication,
+  nickname: string,
+): Promise<{ id: number; auth: string }> {
+  const response = await request(app.getHttpServer())
+    .post('/v1/users')
+    .send({
+      email: `${nickname}@example.com`,
+      password: 'password123',
+      nickname,
+    })
+    .expect(201);
+  const { id } = response.body as { id: number };
+  return { id, auth: bearer(app, { sub: String(id), roles: ['user'] }) };
+}
+```
+
 - 테스트 이름은 해요체 문장이에요: `it('이름이 비어 있으면 400과 필드 에러를 돌려줘요')`(lint: `vitest/valid-title`).
-- service 커버리지 기준은 80%예요(`npm run test:cov`).
+- service 커버리지 기준은 80%예요(`npm run test:cov`, `src/modules/**/*.service.ts`). 위임만 하는 compositions service는 e2e로 확인해요.
 - e2e는 Docker가 필요해요. `npm run test:e2e`는 빌드한 뒤 migration을 적용하고 돌아요.
 
 ## 8. 커밋
@@ -231,8 +297,8 @@ Conventional Commits에 설명은 한국어로 써요: `feat(order-item): 목록
 
 새 feature를 만들 때:
 
-1. `/sonic-harness-be:feature <이름>`으로 뼈대를 만들어요.
-2. entity를 정하고 `npm run migration:generate`로 migration을 만들어요.
+1. `/sonic-harness-be:feature <이름>`으로 뼈대를 만들어요. DB 테이블이 없는 feature(로그인처럼 다른 feature를 조합)는 `--no-entity`로 controller·service만 만들어요.
+2. entity를 정하고 `npm run migration:generate`로 migration을 만들어요(`--no-entity`면 건너뛰어요).
 3. 요청·응답 DTO → repository → service(+ 단위 테스트) → controller 순서로 채워요.
 4. `app.module.ts`에 모듈을 더하고 e2e를 써요.
 5. `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e`를 돌리고 결과를 보고해요(AGENTS.md "완료 보고").
@@ -311,6 +377,7 @@ export class CreateProductDto {
 - 단순 분류는 `GET /v1/common-codes/:groupId/options`, 독립 데이터는 그 feature의 API를 써요. 데이터가 많으면 통합 조회 대신 검색·페이지네이션 API를 만들어요.
 - **개별 API가 기본**이에요. 한 화면이 여러 feature의 옵션을 한 번에 받아야 할 때만 `src/compositions/{screen}/`에 통합 API를 만들어요.
 - compositions는 조합과 응답 변환만 해요. 다른 feature의 `index.ts`(service)로만 가져오고, repository·entity를 둘 수 없어요(lint: `boundaries`). 비즈니스 로직을 다시 구현하지 않아요.
+- composition controller는 다른 feature의 응답 DTO를 `import type`으로만 가져와 반환 타입에 써요(`Promise<PostPageDto>`). 값 import(service 등)는 composition service가 해요.
 - 서로 독립인 조회는 `Promise.all`로 병렬로 불러요. 기본 정책은 **하나라도 실패하면 전체 실패**예요. 부분 응답이 필요하면 `Promise.allSettled`를 쓰고 응답 DTO에 섹션마다 `error` 필드를 둬요.
 - 통합 API 하나가 feature 6개 이상에 기대면 화면이나 유스케이스 단위로 나눠요(lint: `sonic-be/composition-max-deps`, warn).
 

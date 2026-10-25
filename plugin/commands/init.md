@@ -27,6 +27,7 @@ allowed-tools: Bash(node:*), Bash(npm:*), Bash(npx:*), Bash(git:*), Bash(ls:*), 
 3. `harness.mjs init`을 실행해요. 출력의 "건너뛴 템플릿"을 기억해요.
 4. `harness.mjs deps`를 실행해요(시간이 걸려요).
 5. 직접 손볼 곳을 처리해요. 각각 무엇을 바꾸는지 말하고 진행해요.
+   - `.gitignore`는 건너뛰지 않고 하네스에 있는 줄 중 없는 것만 끝에 덧붙여요(출력의 "없는 줄만 덧붙인 템플릿").
    - **건너뛴 템플릿**: 프로젝트에 원래 있던 `main.ts`, `app.module.ts`, `eslint.config.*`, `vitest.config*.ts`, `AGENTS.md` 등이 하네스 템플릿과 다르면 diff를 보여 주고, 하네스 템플릿 내용으로 합칠지 물어요. 특히:
      - `eslint.config.mjs`는 `./.sonic-harness-be/eslint.base.mjs`를 불러와야 해요.
      - `main.ts`는 `app.setup.ts`의 `configureApp`을 거쳐야 해요(e2e와 같은 설정).
@@ -36,7 +37,7 @@ allowed-tools: Bash(node:*), Bash(npm:*), Bash(npx:*), Bash(git:*), Bash(ls:*), 
    - 이미 entity·모듈이 있는 프로젝트면 구조를 바로 옮기지 말고, lint 결과를 보여 준 뒤 옮길 계획을 제안해요(묻지 않고 대규모로 옮기지 않아요).
 6. Y를 골랐으면 "공통 코드 켜기"(아래)를 해요.
 7. `.env`가 없으면 `.env.example`을 복사해 `.env`를 만들고, `DATABASE_URL`과 `JWT_SECRET`을 바꿔야 한다고 알려요.
-8. 확인: `npm run lint`, `npm run typecheck`, `npm test`, `npm run lint:cycles`, `node scripts/harness-checks.mjs env e2e`. 실패하면 고쳐요(규칙을 끄는 주석은 쓰지 않아요). Docker가 있으면 `npm run test:e2e`도 돌려요. 마지막으로 `npm run openapi`로 `openapi.json`을 만들어요(CI가 코드와 비교해요, 커밋 대상이에요).
+8. 확인: `npm run lint`, `npm run typecheck`, `npm test`, `npm run lint:cycles`, `node scripts/harness-checks.mjs env e2e`, `npx prettier --check .`(CI lint job이 검사해요). 실패하면 고쳐요(규칙을 끄는 주석은 쓰지 않아요). Docker가 있으면 `npm run test:e2e`도 돌려요. 마지막으로 `npm run openapi`로 `openapi.json`을 만들어요(CI가 코드와 비교해요, 커밋 대상이에요).
 9. **PR 병합 차단(branch protection)**: GitHub 저장소이고 `gh`가 로그인돼 있으면, CI 필수 check(`lint`, `test`, `e2e`, `openapi`, `migration`, `security`)를 main 브랜치에 거는 명령을 보여 주고 **실행할지 확인을 받아요**. 저장소 관리자 권한이 필요하고, 저장소 설정을 바꾸는 일이라 묻지 않고 실행하지 않아요.
    ```bash
    gh api -X PUT repos/{owner}/{repo}/branches/main/protection --input - <<'JSON'
