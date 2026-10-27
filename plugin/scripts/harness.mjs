@@ -26,6 +26,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
@@ -136,6 +137,27 @@ const STARTER_REMOVE = [
 ];
 // app.module.ts의 imports 배열 안 표시. feature·common-codes 모듈을 이 줄 앞에 더해요.
 const MODULE_MARKER = '// feature 모듈은 여기에 더해요';
+
+// git hook과 CI는 저장소에 하나라서, 모노레포 앱(저장소 루트가 아닌 폴더)에는 두지 않고 루트에 둬요.
+// lint-staged.config.mjs는 앱에 둬요(lint-staged가 파일마다 가장 가까운 설정을 써요).
+const isRootOnly = (p) =>
+  p.startsWith('.husky/') ||
+  p.startsWith('.github/') ||
+  p === 'commitlint.config.mjs';
+const ROOT_ONLY_NOTE =
+  '  git 저장소 루트가 아니에요(모노레포 앱). .husky/, commitlint.config.mjs, .github/는 저장소 루트에 두세요:\n' +
+  '    루트 package.json에 husky·@commitlint/cli·lint-staged와 scripts.prepare=husky,\n' +
+  '    .husky/pre-commit은 npx lint-staged, commit-msg는 npx --no -- commitlint --edit "$1",\n' +
+  '    CI는 루트에서 npm ci 뒤 이 앱 폴더에서 lint·test·openapi:check를 돌려요.';
+// null: git 저장소가 아님, true: 저장소 루트, false: 저장소 안의 하위 폴더(모노레포 앱)
+function isGitRoot() {
+  const r = spawnSync('git', ['rev-parse', '--show-toplevel'], {
+    cwd: PROJECT,
+    encoding: 'utf8',
+  });
+  if (r.status !== 0) return null;
+  return realpathSync(r.stdout.trim()) === realpathSync(PROJECT);
+}
 
 // ---------- 작은 도구 ----------
 const git = (...args) =>
@@ -348,8 +370,10 @@ const commands = {
     const skipped = [];
     const replaced = [];
     const merged = [];
+    const monorepoApp = isGitRoot() === false;
     for (const [f, src] of templatesAt(ref, false)) {
       const dest = join(PROJECT, f);
+      if (monorepoApp && isRootOnly(f)) continue;
       if (f === '.gitignore' && existsSync(dest)) {
         if (appendMissingLines(dest, showAt(ref, src))) merged.push(f);
         continue;
@@ -404,6 +428,7 @@ const commands = {
     if (merged.length)
       console.log(`  없는 줄만 덧붙인 템플릿: ${merged.join(', ')}`);
     console.log(`  이미 있어서 건너뛴 템플릿: ${skipped.join(', ') || '없음'}`);
+    if (monorepoApp) console.log(ROOT_ONLY_NOTE);
   },
 
   deps() {
@@ -416,10 +441,14 @@ const commands = {
     if (old.length) npm('rm', ...old);
     npm('i', '-D', ...DEV_DEPS);
     npm('i', ...DEPS, ...(lock.commonCodes ? COMMON_CODES_DEPS : []));
+    // 모노레포 앱이면 husky는 루트 prepare가 맡아요.
+    const gitRoot = isGitRoot();
     npm(
       'pkg',
       'set',
-      ...Object.entries(SCRIPTS).map(([name, cmd]) => `scripts.${name}=${cmd}`),
+      ...Object.entries(SCRIPTS)
+        .filter(([name]) => gitRoot !== false || name !== 'prepare')
+        .map(([name, cmd]) => `scripts.${name}=${cmd}`),
     );
     // Swagger 문서는 Nest CLI 플러그인이 DTO와 JSDoc 주석으로 만들어요.
     const nestCliPath = join(PROJECT, 'nest-cli.json');
@@ -438,8 +467,8 @@ const commands = {
         stdio: 'ignore',
       },
     );
-    if (existsSync(join(PROJECT, '.git')))
-      run('npx', ['husky'], { stdio: 'ignore' });
+    if (gitRoot) run('npx', ['husky'], { stdio: 'ignore' });
+    else if (gitRoot === false) console.log(ROOT_ONLY_NOTE);
     else
       console.log(
         '  git 저장소가 아니라 husky는 건너뛰었어요. git init 후 npx husky를 실행하세요.',
