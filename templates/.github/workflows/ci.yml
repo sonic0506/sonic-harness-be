@@ -69,7 +69,7 @@ jobs:
       - name: breaking change
         if: github.event_name == 'pull_request'
         run: |
-          if git show "origin/${{ github.base_ref }}:openapi.json" > /tmp/base.json 2>/dev/null; then
+          if git show "origin/${{ github.base_ref }}:./openapi.json" > /tmp/base.json 2>/dev/null; then
             docker run --rm -v /tmp:/base -v "$PWD":/head tufin/oasdiff:v1.34.1 breaking /base/base.json /head/openapi.json --fail-on ERR
           fi
 

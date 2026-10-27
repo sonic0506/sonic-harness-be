@@ -49,7 +49,7 @@ const checks = {
     const before = new Set(
       names(
         JSON.parse(
-          execFileSync('git', ['show', `origin/${base}:package.json`], {
+          execFileSync('git', ['show', `origin/${base}:./package.json`], {
             encoding: 'utf8',
           }),
         ),

@@ -24,7 +24,7 @@ allowed-tools: Bash(node:*), Bash(npm:*), Bash(npx:*), Bash(git:*), Bash(ls:*), 
    - tsconfig에 `.sonic-harness-be/tsconfig.strict.json`을 연결해요.
    - 패키지를 설치하고(oxlint는 지워요) npm scripts와 nest-cli Swagger 플러그인을 설정해요.
    - Y면 공통 코드 feature(템플릿, 패키지, migration, app.module 연결)를 더해요.
-3. `harness.mjs init`을 실행해요. 출력의 "건너뛴 템플릿"을 기억해요.
+3. `harness.mjs init`을 실행해요. 출력의 "건너뛴 템플릿"을 기억해요. 프로젝트가 git 저장소 루트가 아니면(npm workspaces 모노레포의 `apps/server` 같은 앱) `.husky/`, `commitlint.config.mjs`, `.github/`는 복사하지 않고 `deps`도 `scripts.prepare`에 husky를 넣지 않아요. 출력의 안내대로 저장소 루트에 husky·commitlint·CI가 없으면 만들자고 제안해요(9번 branch protection의 check 이름도 루트 CI의 job 이름으로 바꿔요). `lint-staged.config.mjs`는 앱에 그대로 둬요.
 4. `harness.mjs deps`를 실행해요(시간이 걸려요).
 5. 직접 손볼 곳을 처리해요. 각각 무엇을 바꾸는지 말하고 진행해요.
    - `.gitignore`는 건너뛰지 않고 하네스에 있는 줄 중 없는 것만 끝에 덧붙여요(출력의 "없는 줄만 덧붙인 템플릿").
@@ -50,7 +50,7 @@ allowed-tools: Bash(node:*), Bash(npm:*), Bash(npx:*), Bash(git:*), Bash(ls:*), 
 - `AGENTS.md` 아래쪽 "이 프로젝트 정보"를 채워 달라는 안내
 - 새 feature는 `/sonic-harness-be:feature <이름>`으로 만든다는 안내
 - N이면 나중에 켜는 방법: `/sonic-harness-be:init common-codes`
-- git 저장소가 아니면 `git init` 뒤 `npx husky`를 실행하라는 안내
+- git 저장소가 아니면 `git init` 뒤 `npx husky`를 실행하라는 안내(모노레포 앱이면 루트에 husky·commitlint·CI를 두라는 안내)
 - hook은 새 세션부터 확실히 적용된다는 안내
 
 ## 공통 코드 켜기
