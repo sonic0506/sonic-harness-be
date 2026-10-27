@@ -3,19 +3,22 @@
 // 실패하면 exit 2로 끝내지 못하게 하고 결과를 Claude에게 돌려줘요. e2e는 Docker가 필요하고 느려서 여기서 돌리지 않아요.
 // 모노레포면 바뀐 파일마다 가장 가까운 lock.json 폴더(앱)를 찾아 앱별로 돌려요.
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { dirname, isAbsolute, join, relative } from 'node:path';
 
 const input = JSON.parse(readFileSync(0, 'utf8') || '{}');
-const session = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
+// git이 돌려주는 경로와 비교할 수 있게 symlink를 풀어 둬요.
+const session = realpathSync(process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
 // 이미 한 번 막아서 다시 고치는 중이면 또 막지 않아요(끝없이 반복하지 않게).
 if (input.stop_hook_active) process.exit(0);
 
-// dir에서 세션 루트까지 올라가며 rel이 있는 가장 가까운 폴더를 찾아요.
+// dir에서 세션 루트까지 올라가며 rel이 있는 가장 가까운 폴더를 찾아요. 세션 밖으로는 나가지 않아요.
 const findUp = (dir, rel) => {
   for (let d = dir; ; d = dirname(d)) {
+    const fromSession = relative(session, d);
+    if (fromSession.startsWith('..') || isAbsolute(fromSession)) return null;
     if (existsSync(join(d, rel))) return d;
-    if (d === session || d === dirname(d)) return null;
+    if (d === session) return null;
   }
 };
 

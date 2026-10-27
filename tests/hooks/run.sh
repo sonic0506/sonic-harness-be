@@ -38,4 +38,16 @@ check 'verify: 실패 메시지에 앱 경로' "$(grep -c 'typecheck 실패 (app
 check 'verify: 앱 폴더에서 tsc·vitest 실행' "$(cat "$tmp/calls")" "$app tsc --noEmit
 $app vitest related --run --passWithNoTests src/a.ts"
 
+# verify: 세션을 symlink 경로로 열어도 세션 밖(상위 폴더)의 실행 파일은 쓰지 않아요.
+out="$tmp/outer"
+mkdir -p "$out/node_modules/.bin" "$out/repo/.sonic-harness-be" "$out/repo/src"
+echo '{}' >"$out/repo/.sonic-harness-be/lock.json"
+cp "$app/node_modules/.bin/"* "$out/node_modules/.bin/"
+ln -s "$out/repo" "$tmp/link"
+git -C "$out/repo" init -q
+touch "$out/repo/src/a.ts"
+: >"$tmp/calls"
+echo '{}' | CLAUDE_PROJECT_DIR="$tmp/link" node "$here/plugin/hooks/verify.mjs" 2>/dev/null
+check 'verify: symlink 세션에서 세션 밖 실행 파일은 안 씀' "$?:$(cat "$tmp/calls")" '0:'
+
 exit $fail
