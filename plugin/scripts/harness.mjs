@@ -294,12 +294,24 @@ const isNewer = (a, b = '0') => {
 };
 const specName = (spec) => spec.replace(/(.)@[^@/]+$/, '$1'); // '@a/b@5' → '@a/b'
 
+// 모노레포 앱이면 git hook 패키지는 루트에 둬요(앱에 설치하거나 없다고 권하지 않아요).
+const ROOT_ONLY_DEPS = [
+  '@commitlint/cli',
+  '@commitlint/config-conventional',
+  'husky',
+  'lint-staged',
+];
+const devDeps = () =>
+  isGitRoot() === false
+    ? DEV_DEPS.filter((spec) => !ROOT_ONLY_DEPS.includes(specName(spec)))
+    : DEV_DEPS;
+
 // 하네스가 쓰는 패키지 중 package.json에 없는 것. 규칙이 새 ESLint 플러그인을 쓰게 되면 update가 알려 줘요.
 function missingPackages(commonCodes) {
   const all = installed();
   const missing = (list) => list.filter((spec) => !(specName(spec) in all));
   return {
-    dev: missing(DEV_DEPS),
+    dev: missing(devDeps()),
     prod: missing([...DEPS, ...(commonCodes ? COMMON_CODES_DEPS : [])]),
   };
 }
@@ -439,7 +451,7 @@ const commands = {
     };
     const old = REPLACED_DEPS.filter((name) => name in installed());
     if (old.length) npm('rm', ...old);
-    npm('i', '-D', ...DEV_DEPS);
+    npm('i', '-D', ...devDeps());
     npm('i', ...DEPS, ...(lock.commonCodes ? COMMON_CODES_DEPS : []));
     // 모노레포 앱이면 husky는 루트 prepare가 맡아요.
     const gitRoot = isGitRoot();
