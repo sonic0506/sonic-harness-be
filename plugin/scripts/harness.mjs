@@ -101,8 +101,9 @@ const SCRIPTS = {
   start: 'nest start --exec "node --env-file-if-exists=.env"',
   'start:dev': 'nest start --watch --exec "node --env-file-if-exists=.env"',
   'start:prod': 'node dist/main',
+  // 모노레포에서는 typeorm이 루트 node_modules로 올라가서 경로를 resolve로 찾아요.
   typeorm:
-    'node --env-file-if-exists=.env node_modules/typeorm/cli.js -d dist/infra/database/data-source.js',
+    'node --env-file-if-exists=.env "$(node -p "require.resolve(\'typeorm/cli.js\')")" -d dist/infra/database/data-source.js',
   'migration:generate': 'nest build && npm run typeorm -- migration:generate',
   'migration:run': 'nest build && npm run typeorm -- migration:run',
   'migration:revert': 'nest build && npm run typeorm -- migration:revert',
